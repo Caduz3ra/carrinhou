@@ -384,8 +384,43 @@
     .auth-tabs button { flex: 1; height: 40px; border-radius: 9px; background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
     .auth-tabs button.ativo { background: var(--surface-3); color: var(--text); }
     .btn:disabled { opacity: .6; cursor: wait; }
-    .conta-info { text-align: center; font-size: 13px; color: var(--muted); margin-top: 18px; }
-    .conta-info b { color: var(--text); font-weight: 600; }
+    .auth-aviso { display: none; text-align: center; padding: 6px 4px 2px; }
+    .auth-aviso .icone { width: 56px; height: 56px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+    .auth-aviso .icone svg { width: 26px; height: 26px; }
+    .auth-aviso h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+    .auth-aviso p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .auth-aviso p b { color: var(--text); font-weight: 600; word-break: break-all; }
+    .panel.mostrando-aviso .auth-tabs, .panel.mostrando-aviso form, .panel.mostrando-aviso #linkEsqueci { display: none !important; }
+    .panel.mostrando-aviso .auth-aviso { display: block; }
+    .cfg-msg.ok { color: var(--success); }
+
+    /* ---------- Perfil ---------- */
+    .avatar {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), #3b82f6); color: #04131a; font-weight: 800; font-size: 17px;
+      border: none; text-transform: uppercase;
+    }
+    .avatar.grande { width: 56px; height: 56px; font-size: 22px; }
+    #modalPerfil .modal-content { max-height: 92vh; overflow-y: auto; }
+    .perfil-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .perfil-topo .info { flex: 1; min-width: 0; }
+    .perfil-nome { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .perfil-email { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .plano-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--surface-3); color: var(--muted); flex-shrink: 0; }
+    .plano-tag.pro { background: var(--warn-soft); color: var(--warn); }
+    .linha-input { display: flex; gap: 8px; }
+    .linha-input .input { flex: 1; min-width: 0; }
+    .linha-input .btn-mini { flex-shrink: 0; height: 48px; padding: 0 16px; border-radius: 12px; }
+    .perfil-opcao {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 14px 16px; margin-bottom: 8px; border-radius: 12px;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 15px; font-weight: 600;
+    }
+    .perfil-opcao svg { width: 18px; height: 18px; color: var(--muted); transition: transform .2s; }
+    .perfil-opcao.aberto svg { transform: rotate(90deg); }
+    .box-senha { display: none; padding: 4px 2px 8px; }
+    .box-senha.aberto { display: block; animation: entrar .2s ease; }
+    .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     @keyframes subir { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
@@ -449,6 +484,7 @@
       <button class="icon-btn" id="btnHistorico" onclick="toggleMenuHistorico()" title="Histórico">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       </button>
+      <button class="avatar" id="btnPerfil" onclick="abrirPerfil()" title="Minha conta">?</button>
     </div>
   </header>
 
@@ -503,9 +539,7 @@
       <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Voltar para a lista
     </button>
-    <div class="conta-info" id="contaInfo"></div>
-    <button class="btn-link" onclick="sair()">Sair da conta</button>
-    <div style="text-align:center;font-size:11px;color:var(--faint);margin-top:4px;">Versão 2.0</div>
+
   </main>
 </div>
 
@@ -633,7 +667,65 @@
         <button class="btn btn-primary" type="submit" id="btnAuth">Entrar</button>
       </form>
       <button type="button" class="btn-link" id="linkEsqueci" onclick="modoAuth(authModo === 'recuperar' ? 'entrar' : 'recuperar')">Esqueci minha senha</button>
+
+      <!-- Aviso após cadastro / recuperação (esconde o formulário) -->
+      <div class="auth-aviso">
+        <div class="icone"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+        <h3 id="avisoTitulo">Confirme seu e-mail</h3>
+        <p id="avisoTexto"></p>
+        <button type="button" class="btn btn-primary" onclick="fecharAviso()">Ir para o login</button>
+        <button type="button" class="btn-link" onclick="fecharAviso(true)">Usar outro e-mail</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal Minha conta -->
+<div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
+  <div class="modal-content">
+    <div class="perfil-topo">
+      <div class="avatar grande" id="perfilAvatar">?</div>
+      <div class="info">
+        <div class="perfil-nome" id="perfilNomeTxt"></div>
+        <div class="perfil-email" id="perfilEmailTxt"></div>
+      </div>
+      <span class="plano-tag" id="perfilPlano">Free</span>
+    </div>
+
+    <div class="field">
+      <label>Nome</label>
+      <div class="linha-input">
+        <input class="input" type="text" id="perfilNome" autocomplete="name" maxlength="60">
+        <button class="btn-mini btn-ghost" id="btnSalvarNome" onclick="salvarNome()">Salvar</button>
+      </div>
+    </div>
+
+    <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
+      Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <div class="box-senha" id="boxSenha">
+      <div class="field">
+        <label>Senha atual</label>
+        <input class="input" type="password" id="senhaAtual" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>Nova senha</label>
+        <input class="input" type="password" id="senhaNova" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="field">
+        <label>Confirmar nova senha</label>
+        <input class="input" type="password" id="senhaNova2" autocomplete="new-password">
+      </div>
+      <div class="cfg-msg" id="senhaMsg"></div>
+      <button class="btn btn-primary" id="btnTrocarSenha" onclick="trocarSenha()">Salvar nova senha</button>
+    </div>
+
+    <button class="btn btn-danger" style="margin-top:8px" onclick="sair()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+      Sair da conta
+    </button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
+    <div class="perfil-rodape">Carrinhou · versão 2.1</div>
   </div>
 </div>
 
@@ -700,13 +792,32 @@
     filtroEstrela = lsGet(LS_FILTRO, false) === true;
     document.getElementById('btnFiltroEstrela').classList.toggle('on', filtroEstrela);
 
-    let retorno = lerRetornoDoEmail();   // link de confirmação de cadastro / recuperação de senha
     sessao = lsGet(LS_SESSAO, null);
-    if (!sessao || !sessao.user) { mostrarLogin(); return; }
+    let retorno = lerRetornoDoEmail();   // link de confirmação de cadastro / recuperação de senha
+    if (!sessao || !sessao.user) {
+      mostrarLogin();
+      tratarRetorno(retorno);
+      return;
+    }
     iniciarApp();
-    if (retorno === 'recovery') abrirNovaSenha();
-    else if (retorno === 'signup') toast('E-mail confirmado. Bem-vindo!', 'ok');
+    tratarRetorno(retorno);
   };
+
+  // Confirmação de cadastro: vai para o login com aviso. Recuperação: pede a nova senha.
+  function tratarRetorno(r) {
+    if (!r) return;
+    if (r.erro) {
+      if (!sessao) authMensagem(r.erro, true); else toast(r.erro, 'erro');
+    } else if (r.tipo === 'recovery') {
+      abrirNovaSenha();
+    } else if (r.tipo === 'signup') {
+      if (sessao) { toast('E-mail confirmado!', 'ok'); return; }
+      modoAuth('entrar');
+      document.getElementById('authEmail').value = r.email || '';
+      authMensagem('E-mail confirmado! Agora entre com sua senha.', false, true);
+      setTimeout(() => document.getElementById('authSenha').focus(), 100);
+    }
+  }
 
   function iniciarApp() {
     esconderLogin();
@@ -731,9 +842,9 @@
   // Link do e-mail aberto com o app já carregado
   window.addEventListener('hashchange', () => {
     let retorno = lerRetornoDoEmail();
-    if (!retorno || !sessao) return;
-    iniciarApp();
-    if (retorno === 'recovery') abrirNovaSenha();
+    if (!retorno) return;
+    if (retorno.tipo === 'recovery' && sessao) iniciarApp();
+    tratarRetorno(retorno);
   });
 
   window.addEventListener('online', () => { atualizarStatusSync(); sincronizar(); });
@@ -881,20 +992,23 @@
     let p = new URLSearchParams(h);
     history.replaceState(null, '', location.pathname + location.search);
     if (p.get('error')) {
-      let msg = traduzirErro({ msg: p.get('error_description') || p.get('error') });
-      setTimeout(() => authMensagem(msg, true), 0);
-      return null;
+      return { erro: traduzirErro({ msg: p.get('error_description') || p.get('error') }) };
     }
     try {
       let at = p.get('access_token');
       let b64 = at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       let dados = JSON.parse(decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4)))));
-      guardarSessao({
-        access_token: at, refresh_token: p.get('refresh_token'),
-        expires_at: p.get('expires_at'), expires_in: p.get('expires_in'),
-        user: { id: dados.sub, email: dados.email }
-      });
-      return p.get('type');
+      let tipo = p.get('type');
+      // Só a recuperação de senha entra direto (precisa da sessão para trocar a senha).
+      // A confirmação de cadastro manda para a tela de login.
+      if (tipo === 'recovery') {
+        guardarSessao({
+          access_token: at, refresh_token: p.get('refresh_token'),
+          expires_at: p.get('expires_at'), expires_in: p.get('expires_in'),
+          user: { id: dados.sub, email: dados.email }
+        });
+      }
+      return { tipo: tipo, email: dados.email };
     } catch (e) {
       return null;
     }
@@ -914,10 +1028,26 @@
     document.getElementById('telaLogin').classList.remove('visivel');
     document.getElementById('authSenha').value = '';
   }
-  function authMensagem(texto, erro) {
+  function authMensagem(texto, erro, ok) {
     let m = document.getElementById('authMsg');
     m.innerText = texto || '';
-    m.className = 'cfg-msg' + (erro ? ' erro' : '');
+    m.className = 'cfg-msg' + (erro ? ' erro' : ok ? ' ok' : '');
+  }
+
+  const TEXTO_BOTAO_AUTH = { entrar: 'Entrar', criar: 'Criar conta', recuperar: 'Enviar link de recuperação' };
+
+  // Troca o formulário por um aviso (evita clicar de novo em "Criar conta")
+  function mostrarAviso(titulo, html) {
+    document.getElementById('avisoTitulo').innerText = titulo;
+    document.getElementById('avisoTexto').innerHTML = html;
+    document.querySelector('#telaLogin .panel').classList.add('mostrando-aviso');
+  }
+  function fecharAviso(outroEmail) {
+    document.querySelector('#telaLogin .panel').classList.remove('mostrando-aviso');
+    modoAuth(outroEmail ? 'criar' : 'entrar');
+    if (outroEmail) document.getElementById('authEmail').value = '';
+    document.getElementById('authSenha').value = '';
+    setTimeout(() => document.getElementById(outroEmail ? 'authEmail' : 'authSenha').focus(), 80);
   }
 
   function modoAuth(modo) {
@@ -927,8 +1057,7 @@
     document.getElementById('campoNome').style.display = modo === 'criar' ? 'block' : 'none';
     document.getElementById('campoSenha').style.display = modo === 'recuperar' ? 'none' : 'block';
     document.getElementById('authSenha').autocomplete = modo === 'criar' ? 'new-password' : 'current-password';
-    document.getElementById('btnAuth').innerText =
-      { entrar: 'Entrar', criar: 'Criar conta', recuperar: 'Enviar link de recuperação' }[modo];
+    document.getElementById('btnAuth').innerText = TEXTO_BOTAO_AUTH[modo];
     let link = document.getElementById('linkEsqueci');
     link.style.display = modo === 'criar' ? 'none' : 'block';
     link.innerText = modo === 'recuperar' ? 'Voltar para o login' : 'Esqueci minha senha';
@@ -944,7 +1073,6 @@
     if (!navigator.onLine) return authMensagem('Sem internet. Conecte-se para continuar.', true);
 
     let btn = document.getElementById('btnAuth');
-    let textoBtn = btn.innerText;
     btn.disabled = true;
     btn.innerText = 'Aguarde...';
     authMensagem('');
@@ -963,17 +1091,21 @@
         } else {
           modoAuth('entrar');
           document.getElementById('authEmail').value = email;
-          authMensagem('Conta criada! Enviamos um link de confirmação para ' + email + '. Confirme pelo e-mail e depois entre.');
+          mostrarAviso('Confirme seu e-mail',
+            `Enviamos um link de confirmação para <b>${esc(email)}</b>.<br>Abra o e-mail e toque no link para ativar sua conta. Se não encontrar, veja o spam.`);
         }
       } else {
         await authFetch('recover?redirect_to=' + encodeURIComponent(urlDoApp()), { email: email });
-        authMensagem('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha.');
+        modoAuth('entrar');
+        document.getElementById('authEmail').value = email;
+        mostrarAviso('Verifique seu e-mail',
+          `Se existir uma conta com <b>${esc(email)}</b>, enviamos um link para criar uma nova senha.`);
       }
     } catch (e) {
       authMensagem(e.message || 'Erro de conexão.', true);
     } finally {
       btn.disabled = false;
-      btn.innerText = textoBtn;
+      btn.innerText = TEXTO_BOTAO_AUTH[authModo];
     }
   }
 
@@ -1026,14 +1158,104 @@
     if (carrinhoExpandido) toggleCarrinho();
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     authModo = 'entrar';
+    document.querySelector('#telaLogin .panel').classList.remove('mostrando-aviso');
     mostrarLogin(msg, !!msg);
   }
 
   function atualizarConta() {
     let p = dadosGlobais.perfil || {};
     let email = p.email || (sessao && sessao.user.email) || '';
-    document.getElementById('contaInfo').innerHTML =
-      `Conectado como <b>${esc(p.nome || email)}</b>${p.nome ? `<br>${esc(email)}` : ''}`;
+    let nome = p.nome || email.split('@')[0] || '';
+    let inicial = (nome.trim()[0] || '?').toUpperCase();
+    document.getElementById('btnPerfil').innerText = inicial;
+    document.getElementById('perfilAvatar').innerText = inicial;
+    document.getElementById('perfilNomeTxt').innerText = nome;
+    document.getElementById('perfilEmailTxt').innerText = email;
+    let pro = p.plano === 'pro';
+    let tag = document.getElementById('perfilPlano');
+    tag.innerText = pro ? 'Pro' : 'Free';
+    tag.classList.toggle('pro', pro);
+  }
+
+  // ---------- Minha conta ----------
+  function abrirPerfil() {
+    atualizarConta();
+    let p = dadosGlobais.perfil || {};
+    document.getElementById('perfilNome').value = p.nome || '';
+    document.getElementById('boxSenha').classList.remove('aberto');
+    document.getElementById('opcaoSenha').classList.remove('aberto');
+    ['senhaAtual', 'senhaNova', 'senhaNova2'].forEach(id => document.getElementById(id).value = '');
+    senhaMsg('');
+    document.getElementById('modalPerfil').style.display = 'flex';
+  }
+
+  function toggleTrocaSenha() {
+    let aberto = document.getElementById('boxSenha').classList.toggle('aberto');
+    document.getElementById('opcaoSenha').classList.toggle('aberto', aberto);
+    if (aberto) setTimeout(() => document.getElementById('senhaAtual').focus(), 80);
+  }
+
+  function senhaMsg(t, tipo) {
+    let m = document.getElementById('senhaMsg');
+    m.innerText = t || '';
+    m.className = 'cfg-msg' + (tipo ? ' ' + tipo : '');
+  }
+
+  async function salvarNome() {
+    let nome = document.getElementById('perfilNome').value.trim();
+    if (!nome) { toast('O nome não pode ficar vazio.', 'erro'); return; }
+    if (!navigator.onLine) { toast('Sem internet. Tente de novo quando estiver online.', 'erro'); return; }
+    let btn = document.getElementById('btnSalvarNome');
+    btn.disabled = true;
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/perfis?id=eq.' + encodeURIComponent(sessao.user.id), {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + await tokenValido(),
+                   'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ nome: nome })
+      });
+      if (!r.ok) throw new Error('Não foi possível salvar o nome.');
+      dadosGlobais.perfil = Object.assign({}, dadosGlobais.perfil, { nome: nome });
+      salvarLocal();
+      atualizarConta();
+      toast('Nome atualizado', 'ok');
+    } catch (e) {
+      if (e.semSessao) { encerrarSessao(false, 'Sua sessão expirou. Entre novamente.'); return; }
+      toast(e.message || 'Erro ao salvar.', 'erro');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function trocarSenha() {
+    let atual = document.getElementById('senhaAtual').value;
+    let nova = document.getElementById('senhaNova').value;
+    let nova2 = document.getElementById('senhaNova2').value;
+    if (!atual) return senhaMsg('Informe a senha atual.', 'erro');
+    if (nova.length < 6) return senhaMsg('A nova senha deve ter pelo menos 6 caracteres.', 'erro');
+    if (nova !== nova2) return senhaMsg('A confirmação não confere com a nova senha.', 'erro');
+    if (nova === atual) return senhaMsg('A nova senha deve ser diferente da atual.', 'erro');
+    if (!navigator.onLine) return senhaMsg('Sem internet.', 'erro');
+
+    let btn = document.getElementById('btnTrocarSenha');
+    btn.disabled = true;
+    senhaMsg('Salvando...');
+    try {
+      // Confere a senha atual entrando de novo (também renova a sessão)
+      try {
+        guardarSessao(await authFetch('token?grant_type=password', { email: sessao.user.email, password: atual }));
+      } catch (e) {
+        throw new Error(e.status === 400 ? 'Senha atual incorreta.' : e.message);
+      }
+      await authFetch('user', { password: nova }, 'PUT', sessao.access_token);
+      ['senhaAtual', 'senhaNova', 'senhaNova2'].forEach(id => document.getElementById(id).value = '');
+      senhaMsg('Senha alterada com sucesso!', 'ok');
+      toast('Senha alterada!', 'ok');
+    } catch (e) {
+      senhaMsg(e.message || 'Erro ao alterar a senha.', 'erro');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   // ---------- API (função sincronizar no Supabase) ----------
