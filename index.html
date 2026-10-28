@@ -367,6 +367,26 @@
     .cfg-msg.erro { color: var(--danger); }
     .btn-link { background: none; color: var(--muted); font-size: 13px; margin-top: 12px; padding: 8px; width: 100%; }
 
+    /* ---------- Login ---------- */
+    .auth-screen {
+      position: fixed; inset: 0; z-index: 150; display: none; overflow-y: auto;
+      background: radial-gradient(1200px 500px at 50% -200px, rgba(45, 212, 191, 0.14), transparent 70%), var(--bg);
+      padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    }
+    .auth-screen.visivel { display: block; }
+    .auth-box { max-width: 400px; margin: 5vh auto 0; }
+    .auth-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 22px; text-align: center; }
+    .auth-brand .logo { width: 64px; height: 64px; border-radius: 20px; }
+    .auth-brand .logo svg { width: 30px; height: 30px; }
+    .auth-brand h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+    .auth-brand p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+    .auth-tabs { display: flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+    .auth-tabs button { flex: 1; height: 40px; border-radius: 9px; background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
+    .auth-tabs button.ativo { background: var(--surface-3); color: var(--text); }
+    .btn:disabled { opacity: .6; cursor: wait; }
+    .conta-info { text-align: center; font-size: 13px; color: var(--muted); margin-top: 18px; }
+    .conta-info b { color: var(--text); font-weight: 600; }
+
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     @keyframes subir { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
@@ -483,8 +503,9 @@
       <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       Voltar para a lista
     </button>
-    <button class="btn-link" onclick="abrirConfig(false)">Configurações de conexão</button>
-    <div style="text-align:center;font-size:11px;color:var(--faint);margin-top:4px;">Versão 1.15 · toque no preço para trocar</div>
+    <div class="conta-info" id="contaInfo"></div>
+    <button class="btn-link" onclick="sair()">Sair da conta</button>
+    <div style="text-align:center;font-size:11px;color:var(--faint);margin-top:4px;">Versão 2.0</div>
   </main>
 </div>
 
@@ -578,36 +599,72 @@
   </div>
 </div>
 
-<!-- Modal Configuração -->
-<div class="modal" id="modalConfig">
+<!-- Tela de login -->
+<div class="auth-screen" id="telaLogin">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+      </div>
+      <div>
+        <h1>Carrinhou</h1>
+        <p>Sua lista de compras</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="auth-tabs">
+        <button type="button" id="abaEntrar" class="ativo" onclick="modoAuth('entrar')">Entrar</button>
+        <button type="button" id="abaCriar" onclick="modoAuth('criar')">Criar conta</button>
+      </div>
+      <form onsubmit="event.preventDefault(); enviarAuth();">
+        <div class="field" id="campoNome" style="display:none">
+          <label>Nome</label>
+          <input class="input" type="text" id="authNome" autocomplete="name" placeholder="Como quer ser chamado">
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input class="input" type="email" id="authEmail" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="voce@email.com">
+        </div>
+        <div class="field" id="campoSenha">
+          <label>Senha</label>
+          <input class="input" type="password" id="authSenha" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="cfg-msg" id="authMsg"></div>
+        <button class="btn btn-primary" type="submit" id="btnAuth">Entrar</button>
+      </form>
+      <button type="button" class="btn-link" id="linkEsqueci" onclick="modoAuth(authModo === 'recuperar' ? 'entrar' : 'recuperar')">Esqueci minha senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nova Senha (vindo do link de recuperação) -->
+<div class="modal" id="modalNovaSenha">
   <div class="modal-content">
-    <h3>Conectar à planilha</h3>
+    <h3>Definir nova senha</h3>
     <div class="field">
-      <label>URL da API (termina em /exec)</label>
-      <input class="input" type="url" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label>Nova senha</label>
+      <input class="input" type="password" id="novaSenha" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
     </div>
-    <div class="field">
-      <label>Chave</label>
-      <input class="input" type="password" id="cfgChave" placeholder="A mesma do codigo.gs" autocomplete="off" autocapitalize="off">
-    </div>
-    <div class="cfg-msg" id="cfgMsg"></div>
-    <button class="btn btn-primary" onclick="salvarConfig()">Salvar e conectar</button>
-    <button class="btn btn-ghost" id="btnCfgCancelar" onclick="fecharModal('modalConfig')">Cancelar</button>
+    <div class="cfg-msg" id="novaSenhaMsg"></div>
+    <button class="btn btn-primary" id="btnNovaSenha" onclick="salvarNovaSenha()">Salvar senha</button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalNovaSenha')">Depois</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-  // Chaves internas mantidas com o nome antigo para não perder dados/configuração já salvos
-  const LS_DADOS = 'comprasgg_dados';
-  const LS_FILA = 'comprasgg_fila';
-  const LS_CFG = 'comprasgg_cfg';
-  const API_URL_PADRAO = ''; // opcional: cole aqui a URL /exec para já vir preenchida
-  let cfg = { url: '', chave: '' };
+  // ---------- Supabase ----------
+  const SUPABASE_URL = 'https://gdefiegaxqoocwxozvgv.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_jFgDTC7MJLNFSNPdyA_R_A_Foij-Z6Y'; // chave pública: pode ficar no app
 
-  let dadosGlobais = { produtos: [], itens: [], historico: [] };
-  let fila = [];               // operações ainda não enviadas à planilha
+  const LS_DADOS = 'carrinhou_dados';
+  const LS_FILA = 'carrinhou_fila';
+  const LS_SESSAO = 'carrinhou_sessao';
+  let sessao = null;           // { access_token, refresh_token, expires_at, user: { id, email } }
+
+  let dadosGlobais = { perfil: null, itens: [], historico: [] };
+  let fila = [];               // operações ainda não enviadas ao servidor
   let sincronizando = false;
   let falhou = false;
   let carregado = false;
@@ -617,7 +674,7 @@
   let modoEdicaoAtivo = false;
   let mostrandoHistorico = false;
   let histAbertos = new Set();
-  const LS_FILTRO = 'comprasgg_filtro_estrela';
+  const LS_FILTRO = 'carrinhou_filtro_estrela';
   let filtroEstrela = false;
 
   const ICON = {
@@ -636,24 +693,48 @@
   window.onload = function() {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-    cfg = lsGet(LS_CFG, { url: API_URL_PADRAO, chave: '' });
+    // Limpa dados da versão antiga (planilha/Apps Script)
+    ['comprasgg_dados', 'comprasgg_fila', 'comprasgg_cfg', 'comprasgg_filtro_estrela']
+      .forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+
     filtroEstrela = lsGet(LS_FILTRO, false) === true;
     document.getElementById('btnFiltroEstrela').classList.toggle('on', filtroEstrela);
-    let cache = lsGet(LS_DADOS, null);
-    fila = lsGet(LS_FILA, []);
-    if (cache && cache.itens) {
-      dadosGlobais = cache;
-      carregado = true;
-      renderizar();
-    }
-    atualizarStatusSync();
-    if (!cfg.url || !cfg.chave) {
-      document.getElementById('listaPendentes').innerHTML = vazio(ICON.lista, 'Configure a conexão com a planilha.');
-      abrirConfig(true);
-      return;
-    }
-    sincronizar();
+
+    let retorno = lerRetornoDoEmail();   // link de confirmação de cadastro / recuperação de senha
+    sessao = lsGet(LS_SESSAO, null);
+    if (!sessao || !sessao.user) { mostrarLogin(); return; }
+    iniciarApp();
+    if (retorno === 'recovery') abrirNovaSenha();
+    else if (retorno === 'signup') toast('E-mail confirmado. Bem-vindo!', 'ok');
   };
+
+  function iniciarApp() {
+    esconderLogin();
+    let cache = lsGet(LS_DADOS, null);
+    if (cache && cache.dono === sessao.user.id && cache.itens) {
+      dadosGlobais = cache;
+      fila = lsGet(LS_FILA, []);
+      carregado = true;
+    } else {
+      // Outro usuário (ou primeiro acesso) neste aparelho: começa limpo
+      dadosGlobais = { dono: sessao.user.id, perfil: null, itens: [], historico: [] };
+      fila = [];
+      carregado = false;
+      salvarLocal();
+    }
+    renderizar();
+    atualizarConta();
+    atualizarStatusSync();
+    sincronizar();
+  }
+
+  // Link do e-mail aberto com o app já carregado
+  window.addEventListener('hashchange', () => {
+    let retorno = lerRetornoDoEmail();
+    if (!retorno || !sessao) return;
+    iniciarApp();
+    if (retorno === 'recovery') abrirNovaSenha();
+  });
 
   window.addEventListener('online', () => { atualizarStatusSync(); sincronizar(); });
   window.addEventListener('offline', atualizarStatusSync);
@@ -696,7 +777,7 @@
         break;
       case 'fin':
         if (!d.historico.some(h => String(h.id) === String(op.id)))
-          d.historico.push({ id: op.id, data: op.data, total: op.total, itensResumo: op.resumo });
+          d.historico.push({ id: op.id, data: op.data, total: op.total, itens: op.itens || [] });
         d.itens.forEach(i => {
           if (op.ids.includes(String(i.id))) { i.status = 'Pendente'; i.quantidade = 1; }
           i.estrela = false; // finalizou: remove todas as estrelas
@@ -728,25 +809,253 @@
     sincronizar();
   }
 
-  // Chamada à API do Apps Script (text/plain evita bloqueio de CORS)
-  async function api(ops) {
-    const r = await fetch(cfg.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ chave: cfg.chave, ops: ops || [] }),
-      redirect: 'follow'
+  // ---------- Autenticação (Supabase Auth) ----------
+  async function authFetch(caminho, corpo, metodo, token) {
+    const headers = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const r = await fetch(SUPABASE_URL + '/auth/v1/' + caminho, {
+      method: metodo || 'POST', headers: headers,
+      body: corpo ? JSON.stringify(corpo) : undefined
     });
-    const j = await r.json();
-    if (!j.ok) {
-      const err = new Error(j.erro || 'Erro no servidor');
-      err.chaveInvalida = j.codigo === 'CHAVE';
+    let j = {};
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok) {
+      const err = new Error(traduzirErro(j));
+      err.status = r.status;
       throw err;
     }
-    return j.data;
+    return j;
+  }
+
+  function traduzirErro(j) {
+    let m = String((j && (j.msg || j.message || j.error_description || j.error)) || 'Erro de conexão');
+    const mapa = [
+      [/invalid login credentials/i, 'E-mail ou senha incorretos.'],
+      [/email not confirmed/i, 'Confirme seu e-mail antes de entrar (veja sua caixa de entrada e o spam).'],
+      [/already registered|already been registered|already exists/i, 'Este e-mail já tem conta. Use "Entrar".'],
+      [/password should be at least|password.*(short|length)/i, 'A senha deve ter pelo menos 6 caracteres.'],
+      [/rate limit|too many|security purposes/i, 'Muitas tentativas. Aguarde alguns minutos e tente de novo.'],
+      [/invalid.*email|email.*invalid|unable to validate email/i, 'E-mail inválido.'],
+      [/different from the old|same as the old/i, 'A nova senha deve ser diferente da atual.'],
+      [/weak|pwned/i, 'Senha muito fraca. Escolha uma senha mais forte.'],
+      [/expired|invalid.*(link|token)/i, 'Link inválido ou expirado. Solicite um novo.'],
+      [/failed to fetch|network/i, 'Sem conexão com o servidor.']
+    ];
+    for (const [re, t] of mapa) if (re.test(m)) return t;
+    return m;
+  }
+
+  function guardarSessao(j) {
+    sessao = {
+      access_token: j.access_token,
+      refresh_token: j.refresh_token,
+      expires_at: j.expires_at ? Number(j.expires_at) * 1000 : Date.now() + (Number(j.expires_in) || 3600) * 1000,
+      user: { id: j.user.id, email: j.user.email }
+    };
+    lsSet(LS_SESSAO, sessao);
+  }
+
+  function erroSemSessao() {
+    const e = new Error('Sessão expirada');
+    e.semSessao = true;
+    return e;
+  }
+
+  // Devolve um token válido, renovando automaticamente quando está para vencer
+  async function tokenValido() {
+    if (!sessao) throw erroSemSessao();
+    if (Date.now() < sessao.expires_at - 60000) return sessao.access_token;
+    try {
+      guardarSessao(await authFetch('token?grant_type=refresh_token', { refresh_token: sessao.refresh_token }));
+      return sessao.access_token;
+    } catch (e) {
+      if (e.status >= 400 && e.status < 500) throw erroSemSessao(); // refresh inválido: precisa entrar de novo
+      throw e;                                                       // erro de rede: tenta depois
+    }
+  }
+
+  // Lê o retorno dos links enviados por e-mail (#access_token=...&type=signup|recovery)
+  function lerRetornoDoEmail() {
+    let h = location.hash.slice(1);
+    if (!h || !/access_token=|error=/.test(h)) return null;
+    let p = new URLSearchParams(h);
+    history.replaceState(null, '', location.pathname + location.search);
+    if (p.get('error')) {
+      let msg = traduzirErro({ msg: p.get('error_description') || p.get('error') });
+      setTimeout(() => authMensagem(msg, true), 0);
+      return null;
+    }
+    try {
+      let at = p.get('access_token');
+      let b64 = at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      let dados = JSON.parse(decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4)))));
+      guardarSessao({
+        access_token: at, refresh_token: p.get('refresh_token'),
+        expires_at: p.get('expires_at'), expires_in: p.get('expires_in'),
+        user: { id: dados.sub, email: dados.email }
+      });
+      return p.get('type');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function urlDoApp() { return location.origin + location.pathname; }
+
+  // ---------- Tela de login ----------
+  let authModo = 'entrar';
+
+  function mostrarLogin(msg, erro) {
+    document.getElementById('telaLogin').classList.add('visivel');
+    modoAuth(authModo);
+    if (msg) authMensagem(msg, erro);
+  }
+  function esconderLogin() {
+    document.getElementById('telaLogin').classList.remove('visivel');
+    document.getElementById('authSenha').value = '';
+  }
+  function authMensagem(texto, erro) {
+    let m = document.getElementById('authMsg');
+    m.innerText = texto || '';
+    m.className = 'cfg-msg' + (erro ? ' erro' : '');
+  }
+
+  function modoAuth(modo) {
+    authModo = modo;
+    document.getElementById('abaEntrar').classList.toggle('ativo', modo !== 'criar');
+    document.getElementById('abaCriar').classList.toggle('ativo', modo === 'criar');
+    document.getElementById('campoNome').style.display = modo === 'criar' ? 'block' : 'none';
+    document.getElementById('campoSenha').style.display = modo === 'recuperar' ? 'none' : 'block';
+    document.getElementById('authSenha').autocomplete = modo === 'criar' ? 'new-password' : 'current-password';
+    document.getElementById('btnAuth').innerText =
+      { entrar: 'Entrar', criar: 'Criar conta', recuperar: 'Enviar link de recuperação' }[modo];
+    let link = document.getElementById('linkEsqueci');
+    link.style.display = modo === 'criar' ? 'none' : 'block';
+    link.innerText = modo === 'recuperar' ? 'Voltar para o login' : 'Esqueci minha senha';
+    authMensagem('');
+  }
+
+  async function enviarAuth() {
+    let email = document.getElementById('authEmail').value.trim().toLowerCase();
+    let senha = document.getElementById('authSenha').value;
+    let nome = document.getElementById('authNome').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authMensagem('Informe um e-mail válido.', true);
+    if (authModo !== 'recuperar' && senha.length < 6) return authMensagem('A senha deve ter pelo menos 6 caracteres.', true);
+    if (!navigator.onLine) return authMensagem('Sem internet. Conecte-se para continuar.', true);
+
+    let btn = document.getElementById('btnAuth');
+    let textoBtn = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'Aguarde...';
+    authMensagem('');
+    try {
+      if (authModo === 'entrar') {
+        guardarSessao(await authFetch('token?grant_type=password', { email: email, password: senha }));
+        iniciarApp();
+        toast('Bem-vindo!', 'ok');
+      } else if (authModo === 'criar') {
+        const j = await authFetch('signup?redirect_to=' + encodeURIComponent(urlDoApp()),
+          { email: email, password: senha, data: { nome: nome || email.split('@')[0] } });
+        if (j.access_token) {
+          guardarSessao(j);
+          iniciarApp();
+          toast('Conta criada!', 'ok');
+        } else {
+          modoAuth('entrar');
+          document.getElementById('authEmail').value = email;
+          authMensagem('Conta criada! Enviamos um link de confirmação para ' + email + '. Confirme pelo e-mail e depois entre.');
+        }
+      } else {
+        await authFetch('recover?redirect_to=' + encodeURIComponent(urlDoApp()), { email: email });
+        authMensagem('Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha.');
+      }
+    } catch (e) {
+      authMensagem(e.message || 'Erro de conexão.', true);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = textoBtn;
+    }
+  }
+
+  function abrirNovaSenha() {
+    document.getElementById('novaSenha').value = '';
+    document.getElementById('novaSenhaMsg').innerText = '';
+    document.getElementById('modalNovaSenha').style.display = 'flex';
+    setTimeout(() => document.getElementById('novaSenha').focus(), 80);
+  }
+
+  async function salvarNovaSenha() {
+    let senha = document.getElementById('novaSenha').value;
+    let m = document.getElementById('novaSenhaMsg');
+    if (senha.length < 6) { m.innerText = 'A senha deve ter pelo menos 6 caracteres.'; m.className = 'cfg-msg erro'; return; }
+    let btn = document.getElementById('btnNovaSenha');
+    btn.disabled = true;
+    try {
+      await authFetch('user', { password: senha }, 'PUT', await tokenValido());
+      fecharModal('modalNovaSenha');
+      toast('Senha alterada!', 'ok');
+    } catch (e) {
+      m.innerText = e.semSessao ? 'Link expirado. Solicite um novo.' : e.message;
+      m.className = 'cfg-msg erro';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function sair() {
+    let msg = fila.length
+      ? `Há ${fila.length} alteração(ões) ainda não salvas no servidor. Se sair agora, elas serão perdidas. Sair mesmo assim?`
+      : 'Sair da conta?';
+    if (!confirm(msg)) return;
+    try { if (sessao && navigator.onLine) await authFetch('logout', null, 'POST', sessao.access_token); } catch (e) {}
+    encerrarSessao(true);
+  }
+
+  // limpar=true: apaga os dados locais (logout). false: só pede login de novo (sessão expirada)
+  function encerrarSessao(limpar, msg) {
+    clearTimeout(timerSync);
+    sessao = null;
+    try { localStorage.removeItem(LS_SESSAO); } catch (e) {}
+    if (limpar) {
+      fila = [];
+      dadosGlobais = { perfil: null, itens: [], historico: [] };
+      carregado = false;
+      try { localStorage.removeItem(LS_DADOS); localStorage.removeItem(LS_FILA); } catch (e) {}
+    }
+    if (mostrandoHistorico) toggleMenuHistorico();
+    if (carrinhoExpandido) toggleCarrinho();
+    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    authModo = 'entrar';
+    mostrarLogin(msg, !!msg);
+  }
+
+  function atualizarConta() {
+    let p = dadosGlobais.perfil || {};
+    let email = p.email || (sessao && sessao.user.email) || '';
+    document.getElementById('contaInfo').innerHTML =
+      `Conectado como <b>${esc(p.nome || email)}</b>${p.nome ? `<br>${esc(email)}` : ''}`;
+  }
+
+  // ---------- API (função sincronizar no Supabase) ----------
+  async function api(ops, tentativa) {
+    const token = await tokenValido();
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/sincronizar', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ops: ops || [] })
+    });
+    let j = null;
+    try { j = await r.json(); } catch (e) {}
+    if (r.status === 401) {
+      if (!tentativa) { sessao.expires_at = 0; return api(ops, true); } // força renovar o token uma vez
+      throw erroSemSessao();
+    }
+    if (!r.ok) throw new Error((j && (j.message || j.hint)) || 'Erro no servidor');
+    return j;
   }
 
   function sincronizar() {
-    if (!cfg.url || !cfg.chave) return;
+    if (!sessao) return;
     if (sincronizando) { agendarSync(1500); return; }
     if (!navigator.onLine) { atualizarStatusSync(); return; }
 
@@ -761,61 +1070,27 @@
         carregado = true;
         fila = fila.slice(enviados.length);              // remove o que já foi gravado
         dadosGlobais = data;
+        dadosGlobais.dono = sessao.user.id;
         fila.forEach(op => aplicarOp(dadosGlobais, op)); // reaplica o que foi feito durante o envio
         salvarLocal();
         renderizar();
+        atualizarConta();
         atualizarStatusSync();
         if (fila.length) agendarSync(500);
       })
       .catch(function(e) {
         sincronizando = false;
-        falhou = true;
-        atualizarStatusSync();
-        if (e && e.chaveInvalida) {
-          abrirConfig(true, 'Chave inválida. Confira a chave no codigo.gs.');
+        if (e && e.semSessao) {
+          encerrarSessao(false, 'Sua sessão expirou. Entre novamente para continuar.');
           return;
         }
+        falhou = true;
+        atualizarStatusSync();
         if (!carregado) {
           document.getElementById('listaPendentes').innerHTML =
-            '<div class="msg-erro">Sem conexão com a planilha. Tentando novamente...</div>';
+            '<div class="msg-erro">Sem conexão com o servidor. Tentando novamente...</div>';
         }
         agendarSync(15000);
-      });
-  }
-
-  // ---------- Configuração ----------
-  function abrirConfig(obrigatorio, msg) {
-    document.getElementById('cfgUrl').value = cfg.url || API_URL_PADRAO;
-    document.getElementById('cfgChave').value = cfg.chave || '';
-    let m = document.getElementById('cfgMsg');
-    m.innerText = msg || '';
-    m.className = 'cfg-msg' + (msg ? ' erro' : '');
-    document.getElementById('btnCfgCancelar').style.display = obrigatorio ? 'none' : 'flex';
-    document.getElementById('modalConfig').style.display = 'flex';
-  }
-
-  function salvarConfig() {
-    let url = document.getElementById('cfgUrl').value.trim();
-    let chave = document.getElementById('cfgChave').value.trim();
-    let m = document.getElementById('cfgMsg');
-    if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)) {
-      m.innerText = 'A URL deve ser do Apps Script e terminar em /exec.'; m.className = 'cfg-msg erro'; return;
-    }
-    if (!chave) { m.innerText = 'Informe a chave.'; m.className = 'cfg-msg erro'; return; }
-
-    m.innerText = 'Conectando...'; m.className = 'cfg-msg';
-    let anterior = cfg;
-    cfg = { url: url, chave: chave };
-    api([])
-      .then(function() {
-        lsSet(LS_CFG, cfg);
-        fecharModal('modalConfig');
-        toast('Conectado!', 'ok');
-        sincronizar();
-      })
-      .catch(function(e) {
-        cfg = anterior;
-        m.innerText = 'Falha: ' + (e && e.message ? e.message : e); m.className = 'cfg-msg erro';
       });
   }
 
@@ -1043,14 +1318,14 @@
       return;
     }
     let total = itensCarrinho.reduce((acc, i) => acc + Number(i.preco || 0) * Number(i.quantidade || 1), 0);
-    let resumo = itensCarrinho
-      .map(i => `${i.quantidade}x ${String(i.nome).replace(/,/g, ' ')} (R$ ${Number(i.preco || 0).toFixed(2)})`)
-      .join(', ');
+    let itensCompra = itensCarrinho
+      .map(i => ({ nome: i.nome, qtd: Number(i.quantidade || 1), preco: Number(i.preco || 0) }))
+      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }));
 
     if (carrinhoExpandido) toggleCarrinho();
     executar({
-      t: 'fin', id: novoId(), data: agoraStr(),
-      total: Math.round(total * 100) / 100, resumo: resumo,
+      t: 'fin', id: novoId(), data: new Date().toISOString(),
+      total: Math.round(total * 100) / 100, itens: itensCompra,
       ids: itensCarrinho.map(i => String(i.id))
     });
     toast('Compra finalizada!', 'ok');
@@ -1058,7 +1333,7 @@
 
   function excluirHistorico(id) {
     let h = (dadosGlobais.historico || []).find(x => String(x.id) === String(id));
-    let desc = h ? `${h.data} - ${moeda(h.total)}` : 'este registro';
+    let desc = h ? `${formatarData(h.data)} - ${moeda(h.total)}` : 'este registro';
     if (!confirm(`Excluir a compra de ${desc} do histórico?`)) return;
     executar({ t: 'delHist', id: String(id) });
     toast('Registro excluído', 'ok');
@@ -1075,46 +1350,46 @@
   }
 
   // ---------- Sugestões / Último preço ----------
+  // Ao digitar um novo item, mostra os que já existem (tocar abre o item em vez de duplicar)
   function filtrarProdutos() {
     let termo = document.getElementById('nomeProduto').value.toLowerCase().trim();
     let div = document.getElementById('sugestoes');
     div.innerHTML = '';
     if (!termo) return;
 
-    (dadosGlobais.produtos || [])
-      .filter(p => String(p.nome).toLowerCase().includes(termo))
-      .forEach(p => {
+    (dadosGlobais.itens || [])
+      .filter(i => String(i.nome).toLowerCase().includes(termo))
+      .sort(ordenar)
+      .slice(0, 8)
+      .forEach(i => {
         let d = document.createElement('div');
         d.className = 'suggestion-item';
-        d.innerHTML = `<span>${esc(p.nome)}</span><small>${moeda(p.precoSugerido)}</small>`;
+        d.innerHTML = `<span>${esc(i.nome)}</span><small>${i.status === 'Carrinho' ? 'no carrinho' : 'já na lista'}</small>`;
         d.onclick = () => {
-          document.getElementById('nomeProduto').value = p.nome;
-          document.getElementById('precoProduto').value = p.precoSugerido ? precoTxt(p.precoSugerido) : '';
           div.innerHTML = '';
+          fecharModal('modalNovo');
+          abrirDetalhes(i.id, i.status === 'Carrinho');
         };
         div.appendChild(d);
       });
   }
 
-  // "2x Arroz (R$ 25.90)" -> { qtd, nome, preco }
-  function parseResumo(resumo) {
-    return String(resumo || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
-      let m = s.match(/^(\d+(?:[.,]\d+)?)x\s+(.+?)\s*\(R\$\s*([\d.,]+)\)$/i);
-      if (!m) return { qtd: null, nome: s, preco: null };
-      return { qtd: Number(m[1].replace(',', '.')), nome: m[2], preco: Number(m[3].replace(',', '.')) };
-    });
+  // "2026-10-28T13:05:00Z" -> "28/10/2026 10:05" (horário do aparelho)
+  function formatarData(v) {
+    let d = new Date(v);
+    if (isNaN(d)) return String(v || '');
+    let p = n => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
-  // Procura do mais recente para o mais antigo, com nome exato
-  function buscarUltimoPreco(nomeProduto) {
-    let alvo = String(nomeProduto).toLowerCase().trim();
-    let hist = (dadosGlobais.historico || []).slice().reverse();
-    for (let h of hist) {
-      for (let x of parseResumo(h.itensResumo)) {
-        if (x.preco != null && x.nome.toLowerCase().trim() === alvo) return moeda(x.preco);
-      }
-    }
-    return null;
+  // Mapa nome -> preço da compra mais recente (calculado uma vez por renderização)
+  function mapaUltimoPreco() {
+    let m = new Map();
+    (dadosGlobais.historico || [])
+      .slice()
+      .sort((a, b) => new Date(a.data) - new Date(b.data))
+      .forEach(h => (h.itens || []).forEach(x => m.set(String(x.nome).toLowerCase().trim(), Number(x.preco))));
+    return m;
   }
 
   // ---------- Renderização ----------
@@ -1156,23 +1431,25 @@
       .filter(i => String(i.nome).toLowerCase().includes(filtro) && (!filtroEstrela || i.estrela))
       .sort(ordenar);
     let carrinho = itens.filter(i => i.status === 'Carrinho').sort(ordenar);
-    let historico = (dadosGlobais.historico || []).slice().reverse(); // mais recente primeiro
+    let historico = (dadosGlobais.historico || []).slice()
+      .sort((a, b) => new Date(b.data) - new Date(a.data));         // mais recente primeiro
 
     document.getElementById('countPendentes').innerText = todosPendentes.length;
     document.getElementById('countHistorico').innerText = historico.length;
 
     // Pendentes
+    let ultimosPrecos = mapaUltimoPreco();
     let pendentesDiv = document.getElementById('listaPendentes');
     let posPend = capturarPosicoes(pendentesDiv);
     // Mantém os itens marcados no modo edição quando a lista é redesenhada (ex.: ao sincronizar)
     let marcados = new Set(Array.from(pendentesDiv.querySelectorAll('.check-excluir:checked')).map(c => c.value));
     if (pendentes.length === 0) {
       pendentesDiv.innerHTML = vazio(ICON.lista,
-        filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
+        !carregado ? 'Carregando...' : filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
     } else {
       pendentesDiv.innerHTML = pendentes.map(i => {
-        let ultimo = buscarUltimoPreco(i.nome);
-        let badgeUltima = ultimo ? `<div class="last-price">${ICON.tag} Última compra: ${ultimo}</div>` : '';
+        let ultimo = ultimosPrecos.get(String(i.nome).toLowerCase().trim());
+        let badgeUltima = ultimo != null ? `<div class="last-price">${ICON.tag} Última compra: ${moeda(ultimo)}</div>` : '';
         let acao = !modoEdicaoAtivo
           ? `<span class="acao-add" title="Adicionar ao carrinho">${ICON.cart}</span>`
           : '<span class="acao-tag">Renomear</span>';
@@ -1236,10 +1513,9 @@
       historicoDiv.innerHTML = vazio(ICON.hist, 'Nenhuma compra registrada.');
     } else {
       historicoDiv.innerHTML = historico.map(h => {
-        let itensH = parseResumo(h.itensResumo);
-        let qtdTotal = itensH.reduce((a, x) => a + (x.qtd || 1), 0);
+        let itensH = h.itens || [];
+        let qtdTotal = itensH.reduce((a, x) => a + (Number(x.qtd) || 1), 0);
         let linhas = itensH.map(x => {
-          if (x.qtd == null) return `<div class="hist-linha"><div class="nome">${esc(x.nome)}</div></div>`;
           return `
             <div class="hist-linha">
               <div class="nome">${esc(x.nome)}<div class="det">${x.qtd}x ${moeda(x.preco)} un</div></div>
@@ -1250,7 +1526,7 @@
         return `
           <div class="hist-card${aberto ? ' aberto' : ''}" onclick="toggleHist('${esc(h.id)}', this)">
             <div class="hist-top">
-              <span class="hist-data">${ICON.cal} ${esc(h.data)}</span>
+              <span class="hist-data">${ICON.cal} ${esc(formatarData(h.data))}</span>
               <span class="hist-total">${moeda(h.total)}</span>
             </div>
             <div class="hist-sub">
