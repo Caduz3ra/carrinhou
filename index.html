@@ -82,17 +82,21 @@
     .brand .sub { font-size: 12px; color: var(--muted); }
     #labelModo { display: none; }
     .top-acoes { display: flex; align-items: center; gap: 8px; }
-    .sync-pill {
-      height: 32px; padding: 0 12px; border-radius: 999px;
-      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
-      font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    /* Status: só a bolinha (toque mostra o significado) */
+    .sync-btn {
+      width: 36px; height: 44px; flex-shrink: 0; display: grid; place-items: center;
+      background: none; border: none; padding: 0; color: var(--success);
     }
-    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-    .sync-pill.pendente .sync-dot { background: var(--warn); }
-    .sync-pill.offline { color: var(--danger); }
-    .sync-pill.offline .sync-dot { background: var(--danger); }
-    .sync-pill.sincronizando .sync-dot { background: var(--accent); animation: pulsar 1s infinite; }
-    @keyframes pulsar { 50% { opacity: .25; } }
+    .sync-dot {
+      width: 11px; height: 11px; border-radius: 50%; background: currentColor;
+      box-shadow: 0 0 8px currentColor; transition: background .2s, color .2s;
+    }
+    .sync-btn.vermelho { color: var(--danger); }
+    .sync-btn.pisca .sync-dot { animation: pulsar 1s ease-in-out infinite; }
+    @keyframes pulsar { 50% { opacity: .2; box-shadow: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .sync-btn.pisca .sync-dot { animation: none; outline: 2px solid currentColor; outline-offset: 3px; }
+    }
     @media (max-width: 380px) { .brand .sub { display: none; } }
 
     /* ---------- Botões ---------- */
@@ -389,7 +393,7 @@
     .auth-aviso .icone svg { width: 26px; height: 26px; }
     .auth-aviso h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
     .auth-aviso p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-    .auth-aviso p b { color: var(--text); font-weight: 600; word-break: break-all; }
+    .auth-aviso p b { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
     .panel.mostrando-aviso .auth-tabs, .panel.mostrando-aviso form, .panel.mostrando-aviso #linkEsqueci { display: none !important; }
     .panel.mostrando-aviso .auth-aviso { display: block; }
     .cfg-msg.ok { color: var(--success); }
@@ -478,8 +482,8 @@
       <span id="labelModo"></span>
     </div>
     <div class="top-acoes">
-      <button class="sync-pill" id="syncPill" onclick="sincronizarAgora()" title="Sincronizar agora">
-        <span class="sync-dot"></span><span id="syncTxt">...</span>
+      <button class="sync-btn" id="syncPill" onclick="tocarStatus()" title="Status de sincronização" aria-label="Status de sincronização">
+        <span class="sync-dot"></span>
       </button>
       <button class="icon-btn" id="btnHistorico" onclick="toggleMenuHistorico()" title="Histórico">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -725,7 +729,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.1</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.2</div>
   </div>
 </div>
 
@@ -851,7 +855,7 @@
   window.addEventListener('offline', atualizarStatusSync);
   document.addEventListener('visibilitychange', () => {
     // Saindo do app: tenta enviar o que falta. Voltando: puxa alterações.
-    if (document.visibilityState === 'hidden' && fila.length) sincronizar();
+    if (document.visibilityState === 'hidden' && fila.length && !tokenPrecisaRenovar()) sincronizar();
     if (document.visibilityState === 'visible') sincronizar();
   });
 
@@ -972,16 +976,38 @@
     return e;
   }
 
-  // Devolve um token válido, renovando automaticamente quando está para vencer
+  function tokenPrecisaRenovar() {
+    return !!sessao && Date.now() >= sessao.expires_at - 5 * 60000;  // renova 5 min antes de vencer
+  }
+
+  // Devolve um token válido, renovando automaticamente quando está para vencer.
+  // Uma renovação por vez: chamadas simultâneas esperam a mesma (o token de renovação só vale 1 uso).
+  let renovacaoEmAndamento = null;
   async function tokenValido() {
     if (!sessao) throw erroSemSessao();
-    if (Date.now() < sessao.expires_at - 60000) return sessao.access_token;
+    if (!tokenPrecisaRenovar()) return sessao.access_token;
+    if (!renovacaoEmAndamento) {
+      renovacaoEmAndamento = renovarToken().finally(() => { renovacaoEmAndamento = null; });
+    }
+    return renovacaoEmAndamento;
+  }
+
+  async function renovarToken() {
+    let usado = sessao.refresh_token;
     try {
-      guardarSessao(await authFetch('token?grant_type=refresh_token', { refresh_token: sessao.refresh_token }));
+      guardarSessao(await authFetch('token?grant_type=refresh_token', { refresh_token: usado }));
       return sessao.access_token;
     } catch (e) {
-      if (e.status >= 400 && e.status < 500) throw erroSemSessao(); // refresh inválido: precisa entrar de novo
-      throw e;                                                       // erro de rede: tenta depois
+      if (e.status >= 400 && e.status < 500) {
+        // Outra aba/janela pode ter renovado antes: usa a sessão salva, se for mais nova
+        let salva = lsGet(LS_SESSAO, null);
+        if (salva && salva.refresh_token && salva.refresh_token !== usado && Date.now() < salva.expires_at - 60000) {
+          sessao = salva;
+          return sessao.access_token;
+        }
+        throw erroSemSessao();   // servidor recusou de fato: precisa entrar de novo
+      }
+      throw e;                   // erro de rede/servidor: mantém a sessão e tenta depois
     }
   }
 
@@ -1316,25 +1342,41 @@
       });
   }
 
+  // Verde fixo: tudo salvo · Verde piscando: salvando
+  // Vermelho fixo: sem conexão, nada pendente · Vermelho piscando: sem conexão, com alterações aguardando envio
+  let statusAtual = { msg: 'Tudo salvo', tipo: 'ok' };
+
   function atualizarStatusSync() {
-    let pill = document.getElementById('syncPill');
-    let txt = document.getElementById('syncTxt');
-    pill.className = 'sync-pill';
+    let btn = document.getElementById('syncPill');
+    let n = fila.length;
+    let semConexao = !navigator.onLine || falhou;
+    let pend = `${n} ${n > 1 ? 'alterações aguardando' : 'alteração aguardando'} envio`;
+    let cor = 'verde', pisca = false;
+
     if (sincronizando) {
-      pill.classList.add('sincronizando');
-      txt.innerText = 'Salvando';
-    } else if (!navigator.onLine) {
-      pill.classList.add('offline');
-      txt.innerText = fila.length ? `Offline · ${fila.length}` : 'Offline';
-    } else if (fila.length) {
-      pill.classList.add(falhou ? 'offline' : 'pendente');
-      txt.innerText = falhou ? `Erro · ${fila.length}` : `${fila.length} pendente${fila.length > 1 ? 's' : ''}`;
-    } else if (falhou) {
-      pill.classList.add('offline');
-      txt.innerText = 'Sem conexão';
+      pisca = true;
+      statusAtual = { msg: 'Salvando suas alterações...', tipo: '' };
+    } else if (semConexao && n) {
+      cor = 'vermelho'; pisca = true;
+      statusAtual = { msg: `Sem conexão · ${pend}. Serão salvas quando a conexão voltar.`, tipo: 'erro' };
+    } else if (semConexao) {
+      cor = 'vermelho';
+      statusAtual = { msg: 'Sem conexão. Seus dados estão salvos.', tipo: 'erro' };
+    } else if (n) {
+      pisca = true;                                   // vai salvar em instantes
+      statusAtual = { msg: 'Salvando suas alterações...', tipo: '' };
     } else {
-      txt.innerText = 'Salvo';
+      statusAtual = { msg: 'Tudo salvo', tipo: 'ok' };
     }
+    btn.className = 'sync-btn' + (cor === 'vermelho' ? ' vermelho' : '') + (pisca ? ' pisca' : '');
+    btn.title = statusAtual.msg;
+    btn.setAttribute('aria-label', statusAtual.msg);
+  }
+
+  // Toque na bolinha: mostra o significado e tenta sincronizar na hora
+  function tocarStatus() {
+    toast(statusAtual.msg, statusAtual.tipo);
+    if (sessao && navigator.onLine) sincronizarAgora();
   }
 
   // ---------- Utilitários ----------
