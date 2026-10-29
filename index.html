@@ -1162,7 +1162,7 @@
 
   async function sair() {
     let msg = fila.length
-      ? `Há ${fila.length} alteração(ões) ainda não salvas no servidor. Se sair agora, elas serão perdidas. Sair mesmo assim?`
+      ? `Há ${fila.length} alteração(ões) salvas só neste aparelho, ainda não enviadas à nuvem. Se sair agora, elas serão perdidas. Sair mesmo assim?`
       : 'Sair da conta?';
     if (!confirm(msg)) return;
     try { if (sessao && navigator.onLine) await authFetch('logout', null, 'POST', sessao.access_token); } catch (e) {}
@@ -1342,31 +1342,32 @@
       });
   }
 
-  // Verde fixo: tudo salvo · Verde piscando: salvando
-  // Vermelho fixo: sem conexão, nada pendente · Vermelho piscando: sem conexão, com alterações aguardando envio
-  let statusAtual = { msg: 'Tudo salvo', tipo: 'ok' };
+  // Tudo é salvo NO APARELHO na hora; a bolinha mostra a sincronização com a NUVEM.
+  // Verde fixo: sincronizado · Verde piscando: sincronizando
+  // Vermelho fixo: sem conexão, nada pendente · Vermelho piscando: sem conexão, com alterações só no aparelho
+  let statusAtual = { msg: 'Tudo sincronizado com a nuvem.', tipo: 'ok' };
 
   function atualizarStatusSync() {
     let btn = document.getElementById('syncPill');
     let n = fila.length;
     let semConexao = !navigator.onLine || falhou;
-    let pend = `${n} ${n > 1 ? 'alterações aguardando' : 'alteração aguardando'} envio`;
+    let pend = n > 1 ? `${n} alterações salvas só neste aparelho` : '1 alteração salva só neste aparelho';
     let cor = 'verde', pisca = false;
 
     if (sincronizando) {
       pisca = true;
-      statusAtual = { msg: 'Salvando suas alterações...', tipo: '' };
+      statusAtual = { msg: 'Sincronizando com a nuvem...', tipo: '' };
     } else if (semConexao && n) {
       cor = 'vermelho'; pisca = true;
-      statusAtual = { msg: `Sem conexão · ${pend}. Serão salvas quando a conexão voltar.`, tipo: 'erro' };
+      statusAtual = { msg: `Sem conexão · ${pend}. Serão enviadas à nuvem quando a conexão voltar.`, tipo: 'erro' };
     } else if (semConexao) {
       cor = 'vermelho';
-      statusAtual = { msg: 'Sem conexão. Seus dados estão salvos.', tipo: 'erro' };
+      statusAtual = { msg: 'Sem conexão. Tudo já está sincronizado com a nuvem.', tipo: 'erro' };
     } else if (n) {
-      pisca = true;                                   // vai salvar em instantes
-      statusAtual = { msg: 'Salvando suas alterações...', tipo: '' };
+      pisca = true;                                   // vai sincronizar em instantes
+      statusAtual = { msg: 'Sincronizando com a nuvem...', tipo: '' };
     } else {
-      statusAtual = { msg: 'Tudo salvo', tipo: 'ok' };
+      statusAtual = { msg: 'Tudo sincronizado com a nuvem.', tipo: 'ok' };
     }
     btn.className = 'sync-btn' + (cor === 'vermelho' ? ' vermelho' : '') + (pisca ? ' pisca' : '');
     btn.title = statusAtual.msg;
