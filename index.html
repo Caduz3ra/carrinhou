@@ -454,6 +454,7 @@
     .perfil-opcao.aberto svg { transform: rotate(90deg); }
     .box-senha { display: none; padding: 4px 2px 8px; }
     .box-senha.aberto { display: block; animation: entrar .2s ease; }
+    .carregar-mais { grid-column: 1 / -1; margin-top: 4px; }
     .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -744,12 +745,15 @@
       <button class="btn btn-primary" id="btnTrocarSenha" onclick="trocarSenha()">Salvar nova senha</button>
     </div>
 
+    <button class="perfil-opcao" onclick="recarregarTudo()">
+      Recarregar tudo da nuvem <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
     <button class="btn btn-danger" style="margin-top:8px" onclick="sair()">
       <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.7</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.8</div>
   </div>
 </div>
 
@@ -911,16 +915,21 @@
         d.itens = d.itens.filter(i => !op.ids.includes(String(i.id)));
         break;
       case 'fin':
-        if (!d.historico.some(h => String(h.id) === String(op.id)))
+        if (!d.historico.some(h => String(h.id) === String(op.id))) {
           d.historico.push({ id: op.id, data: op.data, total: op.total, itens: op.itens || [] });
+          d.historicoTotal = (d.historicoTotal || 0) + 1;
+        }
         d.itens.forEach(i => {
           if (op.ids.includes(String(i.id))) { i.status = 'Pendente'; i.quantidade = 1; }
           i.estrela = false; // finalizou: remove todas as estrelas
         });
         break;
-      case 'delHist':
+      case 'delHist': {
+        let antes = d.historico.length;
         d.historico = d.historico.filter(h => String(h.id) !== String(op.id));
+        if (d.historico.length < antes) d.historicoTotal = Math.max(0, (d.historicoTotal || 1) - 1);
         break;
+      }
     }
   }
 
@@ -1305,21 +1314,95 @@
   }
 
   // ---------- API (função sincronizar no Supabase) ----------
-  async function api(ops, tentativa) {
+  // Chama uma função (RPC) do Supabase com o token do usuário
+  async function rpc(nome, corpo, tentativa) {
     const token = await tokenValido();
-    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/sincronizar', {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + nome, {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ops: ops || [] })
+      body: JSON.stringify(corpo || {})
     });
     let j = null;
     try { j = await r.json(); } catch (e) {}
     if (r.status === 401) {
-      if (!tentativa) { sessao.expires_at = 0; return api(ops, true); } // força renovar o token uma vez
+      if (!tentativa) { sessao.expires_at = 0; return rpc(nome, corpo, true); } // força renovar o token uma vez
       throw erroSemSessao();
     }
     if (!r.ok) throw new Error((j && (j.message || j.hint)) || 'Erro no servidor');
     return j;
+  }
+
+  // desde = marcador da última sincronização (null = baixa tudo)
+  function api(ops, desde) {
+    return rpc('sincronizar', { ops: ops || [], desde: desde || null });
+  }
+
+  // ---------- Sincronização incremental ----------
+  // Muda quando o formato dos dados locais muda: força uma sincronização completa
+  const VERSAO_SYNC = 2;
+
+  function marcadorAtual() {
+    return (carregado && dadosGlobais.vs === VERSAO_SYNC && dadosGlobais.cursor) ? dadosGlobais.cursor : null;
+  }
+
+  // Junta a resposta do servidor aos dados locais
+  function mesclarResposta(d) {
+    if (d.completo) {
+      dadosGlobais = {
+        itens: d.itens || [], historico: d.historico || [],
+        ultimosPrecos: d.ultimos_precos || [], historicoTotal: d.historico_total || 0
+      };
+    } else {
+      let porId = new Map((dadosGlobais.itens || []).map(i => [String(i.id), i]));
+      (d.itens || []).forEach(i => porId.set(String(i.id), i));
+      (d.itens_removidos || []).forEach(id => porId.delete(String(id)));
+      dadosGlobais.itens = Array.from(porId.values());
+
+      let hist = new Map((dadosGlobais.historico || []).map(h => [String(h.id), h]));
+      (d.historico || []).forEach(h => hist.set(String(h.id), h));
+      (d.historico_removidos || []).forEach(id => hist.delete(String(id)));
+      dadosGlobais.historico = Array.from(hist.values());
+
+      if (d.ultimos_precos) dadosGlobais.ultimosPrecos = d.ultimos_precos;
+      dadosGlobais.historicoTotal = d.historico_total || 0;
+    }
+    dadosGlobais.perfil = d.perfil || dadosGlobais.perfil || null;
+    dadosGlobais.cursor = d.agora;
+    dadosGlobais.vs = VERSAO_SYNC;
+    dadosGlobais.dono = sessao.user.id;
+  }
+
+  function recarregarTudo() {
+    if (!navigator.onLine) { toast('Sem internet. Tente de novo quando estiver online.', 'erro'); return; }
+    dadosGlobais.cursor = null;
+    fecharModal('modalPerfil');
+    toast('Recarregando tudo da nuvem...', '');
+    sincronizarAgora();
+  }
+
+  // Histórico: "Carregar mais" (compras mais antigas que a última exibida)
+  let carregandoHistorico = false;
+  async function carregarMaisHistorico() {
+    if (carregandoHistorico) return;
+    if (!navigator.onLine) { toast('Sem internet para carregar o histórico.', 'erro'); return; }
+    let hist = dadosGlobais.historico || [];
+    let maisAntiga = hist.reduce((m, h) => (!m || new Date(h.data) < new Date(m) ? h.data : m), null);
+    if (!maisAntiga) return;
+    carregandoHistorico = true;
+    renderizar();
+    try {
+      let pagina = await rpc('historico_pagina', { antes: maisAntiga, qtd: 20 });
+      let porId = new Map(hist.map(h => [String(h.id), h]));
+      (pagina || []).forEach(h => porId.set(String(h.id), h));
+      dadosGlobais.historico = Array.from(porId.values());
+      salvarLocal();
+    } catch (e) {
+      if (e.semSessao) { encerrarSessao(false, 'Sua sessão expirou. Entre novamente.'); return; }
+      toast('Não foi possível carregar o histórico.', 'erro');
+    } finally {
+      carregandoHistorico = false;
+      renderizar();
+    }
   }
 
   function sincronizar() {
@@ -1331,14 +1414,13 @@
     atualizarStatusSync();
     let enviados = fila.slice();
 
-    api(enviados)
+    api(enviados, marcadorAtual())
       .then(function(data) {
         sincronizando = false;
         falhou = false;
         carregado = true;
         fila = fila.slice(enviados.length);              // remove o que já foi gravado
-        dadosGlobais = data;
-        dadosGlobais.dono = sessao.user.id;
+        mesclarResposta(data);
         fila.forEach(op => aplicarOp(dadosGlobais, op)); // reaplica o que foi feito durante o envio
         salvarLocal();
         renderizar();
@@ -1783,13 +1865,13 @@
     return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
-  // Mapa nome -> preço da compra mais recente (calculado uma vez por renderização)
+  // Mapa nome -> preço da compra mais recente.
+  // Vem pronto do servidor; compras finalizadas que ainda não subiram (fila) entram por cima.
   function mapaUltimoPreco() {
     let m = new Map();
-    (dadosGlobais.historico || [])
-      .slice()
-      .sort((a, b) => new Date(a.data) - new Date(b.data))
-      .forEach(h => (h.itens || []).forEach(x => m.set(String(x.nome).toLowerCase().trim(), Number(x.preco))));
+    (dadosGlobais.ultimosPrecos || []).forEach(([nome, preco]) => m.set(String(nome).toLowerCase().trim(), Number(preco)));
+    fila.filter(op => op.t === 'fin').forEach(op =>
+      (op.itens || []).forEach(x => m.set(String(x.nome).toLowerCase().trim(), Number(x.preco))));
     return m;
   }
 
@@ -1840,7 +1922,8 @@
       .sort((a, b) => new Date(b.data) - new Date(a.data));         // mais recente primeiro
 
     document.getElementById('countPendentes').innerText = todosPendentes.length;
-    document.getElementById('countHistorico').innerText = historico.length;
+    let totalHist = Math.max(historico.length, dadosGlobais.historicoTotal || 0);
+    document.getElementById('countHistorico').innerText = totalHist;
 
     // Pendentes
     let ultimosPrecos = mapaUltimoPreco();
@@ -1948,6 +2031,13 @@
             </div>
           </div>`;
       }).join('');
+      let faltam = totalHist - historico.length;
+      if (faltam > 0) {
+        historicoDiv.innerHTML += `
+          <button class="btn btn-ghost carregar-mais" onclick="carregarMaisHistorico()"${carregandoHistorico ? ' disabled' : ''}>
+            ${carregandoHistorico ? 'Carregando...' : `Carregar mais (${faltam} compra${faltam > 1 ? 's' : ''} antiga${faltam > 1 ? 's' : ''})`}
+          </button>`;
+      }
     }
   }
 </script>
