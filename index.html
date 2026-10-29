@@ -191,27 +191,42 @@
 
     /* ---------- Modo edição ---------- */
     /* ---------- Arrastar item (swipe) ---------- */
-    .swipe { position: relative; border-radius: 14px; overflow: hidden; animation: entrar .25s ease both; }
+    .swipe { position: relative; border-radius: 14px; overflow: hidden; animation: entrar .25s ease both; --p: 0; }
     .swipe > .item-card {
       position: relative; z-index: 1; margin-bottom: 0; animation: none;
       touch-action: pan-y; -webkit-user-select: none; user-select: none;
-      transition: transform .28s cubic-bezier(.2,.8,.2,1), background .15s, border-color .15s;
+      will-change: transform; transform: translate3d(0, 0, 0);
+      transition: transform .42s cubic-bezier(.22, 1, .36, 1), background .15s, border-color .15s;
     }
-    .swipe.arrastando > .item-card { transition: none; }
+    .swipe.arrastando > .item-card { transition: background .15s, border-color .15s; }
     .swipe.arrastando > .item-card:active { transform: none; }
-    .swipe-lado { position: absolute; top: 0; bottom: 0; display: flex; visibility: hidden; }
+    /* Botões ficam atrás do card, como cartões separados (cantos arredondados, com espaço entre eles) */
+    .swipe-lado { position: absolute; top: 0; bottom: 0; display: flex; gap: 6px; visibility: hidden; }
     .swipe-lado.esq { left: 0; }
     .swipe-lado.dir { right: 0; }
     .swipe.mostra-esq .swipe-lado.esq, .swipe.mostra-dir .swipe-lado.dir { visibility: visible; }
     .swipe-btn {
-      width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-      font-size: 11px; font-weight: 600; border: none; padding: 0;
+      width: 70px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      font-size: 11px; font-weight: 600; border: 1px solid transparent; padding: 0;
+      opacity: var(--p); transform: scale(calc(.82 + .18 * var(--p)));
+      transition: opacity .2s ease, transform .2s ease;
     }
+    .swipe.arrastando .swipe-btn { transition: none; }
+    .swipe-btn:active { filter: brightness(1.25); }
     .swipe-btn svg { width: 20px; height: 20px; }
-    .swipe-btn.estrela { width: 78px; background: rgba(251, 191, 36, 0.16); color: var(--warn); }
+    .swipe-btn.estrela { width: 74px; background: rgba(251, 191, 36, 0.14); border-color: rgba(251, 191, 36, 0.25); color: var(--warn); }
     .swipe-btn.estrela.on svg { fill: currentColor; }
-    .swipe-btn.editar { background: rgba(96, 165, 250, 0.16); color: #60a5fa; }
-    .swipe-btn.excluir { background: rgba(248, 113, 113, 0.18); color: var(--danger); }
+    .swipe-btn.editar { background: rgba(96, 165, 250, 0.14); border-color: rgba(96, 165, 250, 0.25); color: #60a5fa; }
+    .swipe-btn.excluir { background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.25); color: var(--danger); }
+
+    /* Botão X para limpar a busca */
+    .limpar-busca {
+      display: none; width: 28px; height: 28px; margin-right: -6px; border-radius: 50%; flex-shrink: 0;
+      background: none; border: none; padding: 0; color: var(--faint); place-items: center;
+    }
+    .search.tem-texto .limpar-busca { display: grid; }
+    .limpar-busca:active { color: var(--muted); }
+    .search .limpar-busca svg { width: 18px; height: 18px; color: currentColor; }
 
     /* ---------- Itens ---------- */
     .item-card {
@@ -519,6 +534,9 @@
         <div class="search">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="pesquisaPendente" placeholder="Pesquisar..." oninput="renderizar()">
+          <button type="button" class="limpar-busca" onclick="limparBusca()" aria-label="Limpar busca" title="Limpar busca">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none" opacity=".35"/><path d="m15 9-6 6M9 9l6 6" stroke="var(--surface-2)" stroke-width="2.4"/></svg>
+          </button>
         </div>
         <button class="icon-btn" id="btnFiltroEstrela" onclick="toggleFiltroEstrela()" title="Mostrar só itens com estrela">
           <svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg>
@@ -731,7 +749,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.6</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.7</div>
   </div>
 </div>
 
@@ -1507,22 +1525,36 @@
   }
 
   // ---------- Arrastar item: ← lápis/lixeira · → estrela ----------
-  const SWIPE_ESTRELA = 78;      // largura revelada ao arrastar para a direita
-  const SWIPE_ACOES = -148;      // largura revelada ao arrastar para a esquerda (2 botões)
+  const SWIPE_ESTRELA = 80;      // 74 do botão + 6 de espaço
+  const SWIPE_ACOES = -152;      // 6 + 70 + 6 + 70
   let swipe = {};                // arrasto em andamento
   let swipeAberto = null;        // item com ações abertas
   let ignorarClique = false;
   let renderAdiado = false;
 
+  // Aplica a posição do card e o "progresso" (0..1) que controla opacidade/escala dos botões
+  function desenharSwipe(el, x) {
+    el.querySelector('.item-card').style.transform = x ? `translate3d(${x}px, 0, 0)` : '';
+    let lim = x > 0 ? SWIPE_ESTRELA : -SWIPE_ACOES;
+    el.style.setProperty('--p', Math.min(1, Math.abs(x) / lim).toFixed(3));
+    el.classList.toggle('mostra-esq', x > 0);
+    el.classList.toggle('mostra-dir', x < 0);
+  }
+
   function posicionarSwipe(el, pos) {
     el.dataset.pos = pos;
-    el.querySelector('.item-card').style.transform = pos ? `translateX(${pos}px)` : '';
-    el.classList.toggle('mostra-esq', pos > 0);
-    el.classList.toggle('mostra-dir', pos < 0);
+    desenharSwipe(el, pos);
     if (pos) swipeAberto = el;
     else if (swipeAberto === el) swipeAberto = null;
   }
   function fecharSwipe() { if (swipeAberto) posicionarSwipe(swipeAberto, 0); }
+
+  // Passou do limite: continua andando, mas "pesado" (efeito elástico)
+  function elastico(x) {
+    if (x > SWIPE_ESTRELA) return SWIPE_ESTRELA + (x - SWIPE_ESTRELA) * 0.25;
+    if (x < SWIPE_ACOES) return SWIPE_ACOES + (x - SWIPE_ACOES) * 0.25;
+    return x;
+  }
 
   function iniciarSwipe(e) {
     if (e.button) return;                                   // só botão principal / dedo
@@ -1530,37 +1562,49 @@
     if (!card) return;
     let el = card.parentElement;
     if (swipeAberto && swipeAberto !== el) fecharSwipe();
+    let base = Number(el.dataset.pos || 0);
     swipe = { el: el, card: card, pid: e.pointerId, x0: e.clientX, y0: e.clientY,
-              base: Number(el.dataset.pos || 0), x: Number(el.dataset.pos || 0), modo: null };
+              base: base, x: base, modo: null, vx: 0, ultX: e.clientX, ultT: performance.now(), raf: 0 };
   }
   function moverSwipe(e) {
     if (!swipe.el || e.pointerId !== swipe.pid) return;
     let dx = e.clientX - swipe.x0, dy = e.clientY - swipe.y0;
     if (!swipe.modo) {
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       swipe.modo = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';  // vertical = rolagem normal da lista
       if (swipe.modo === 'h') {
         swipe.el.classList.add('arrastando');
+        swipe.x0 = e.clientX;                                  // começa daqui: sem "pulo" inicial
+        dx = 0;
         try { swipe.card.setPointerCapture(e.pointerId); } catch (err) {}
       }
     }
     if (swipe.modo !== 'h') return;
     e.preventDefault();
-    let x = Math.max(SWIPE_ACOES - 24, Math.min(SWIPE_ESTRELA + 24, swipe.base + dx));
-    swipe.x = x;
-    swipe.card.style.transform = `translateX(${x}px)`;
-    swipe.el.classList.toggle('mostra-esq', x > 0);
-    swipe.el.classList.toggle('mostra-dir', x < 0);
+    let agora = performance.now();
+    let dt = Math.max(1, agora - swipe.ultT);
+    swipe.vx = 0.8 * ((e.clientX - swipe.ultX) / dt) + 0.2 * swipe.vx;   // velocidade suavizada (px/ms)
+    swipe.ultX = e.clientX; swipe.ultT = agora;
+    swipe.x = elastico(swipe.base + dx);
+    if (!swipe.raf) {
+      swipe.raf = requestAnimationFrame(() => {               // 1 desenho por quadro
+        if (swipe.el) { desenharSwipe(swipe.el, swipe.x); swipe.raf = 0; }
+      });
+    }
   }
   function soltarSwipe(e) {
     if (!swipe.el || e.pointerId !== swipe.pid) return;
     let s0 = swipe;
     swipe = {};
+    if (s0.raf) cancelAnimationFrame(s0.raf);
     s0.el.classList.remove('arrastando');
     if (s0.modo === 'h') {
       ignorarClique = true;
       setTimeout(() => { ignorarClique = false; }, 60);
-      let pos = s0.x > SWIPE_ESTRELA / 2 ? SWIPE_ESTRELA : s0.x < SWIPE_ACOES / 2 ? SWIPE_ACOES : 0;
+      let pos;
+      if (s0.vx > 0.45) pos = s0.x < 0 ? 0 : SWIPE_ESTRELA;          // movimento rápido para a direita
+      else if (s0.vx < -0.45) pos = s0.x > 0 ? 0 : SWIPE_ACOES;      // movimento rápido para a esquerda
+      else pos = s0.x > SWIPE_ESTRELA / 2 ? SWIPE_ESTRELA : s0.x < SWIPE_ACOES / 2 ? SWIPE_ACOES : 0;
       posicionarSwipe(s0.el, pos);
     }
     if (renderAdiado) { renderAdiado = false; renderizar(); }
@@ -1571,6 +1615,13 @@
     if (ignorarClique) return;
     if (swipeAberto) { fecharSwipe(); return; }
     abrirDetalhes(id);
+  }
+
+  function limparBusca() {
+    let campo = document.getElementById('pesquisaPendente');
+    campo.value = '';
+    renderizar();
+    campo.focus();
   }
 
   function acaoEstrela(id) {
@@ -1776,7 +1827,9 @@
   function renderizar() {
     if (swipe.el && swipe.modo === 'h') { renderAdiado = true; return; }  // não redesenha no meio do arrasto
     swipeAberto = null;
-    let filtro = (document.getElementById('pesquisaPendente').value || '').toLowerCase();
+    let campoBusca = document.getElementById('pesquisaPendente');
+    let filtro = (campoBusca.value || '').toLowerCase();
+    campoBusca.parentElement.classList.toggle('tem-texto', !!campoBusca.value);
     let itens = dadosGlobais.itens || [];
     let todosPendentes = itens.filter(i => i.status !== 'Carrinho');
     let pendentes = todosPendentes
