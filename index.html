@@ -357,10 +357,10 @@
 
     /* ---------- Toast ---------- */
     .toast {
-      position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top)); /* abaixo da ilha dinâmica / notch */ transform: translate(-50%, -20px);
+      position: fixed; left: 50%; top: calc(78px + env(safe-area-inset-top)); /* logo abaixo da barra do topo (no iPhone, por cima dela ficava borrado) */ transform: translate(-50%, -20px);
       background: var(--surface-3); color: var(--text); border: 1px solid var(--border-2);
       padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500;
-      box-shadow: var(--shadow); opacity: 0; pointer-events: none; z-index: 200;
+      box-shadow: var(--shadow); opacity: 0; pointer-events: none; z-index: 200; will-change: transform, opacity;
       transition: opacity .25s, transform .25s; max-width: calc(100% - 32px);
     }
     .toast.visivel { opacity: 1; transform: translate(-50%, 0); }
@@ -729,7 +729,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.3</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.5</div>
   </div>
 </div>
 
@@ -1466,12 +1466,18 @@
 
   function abrirModalNovo() {
     document.getElementById('modalNovo').style.display = 'flex';
-    document.getElementById('nomeProduto').value = '';
+    // Já vem preenchido com o que foi digitado na busca (1ª letra maiúscula)
+    let busca = document.getElementById('pesquisaPendente').value.trim();
+    document.getElementById('nomeProduto').value = busca ? busca.charAt(0).toUpperCase() + busca.slice(1) : '';
     document.getElementById('precoProduto').value = '';
     document.getElementById('precoProduto').dataset.antigo = '';
     document.getElementById('qtdProduto').value = '1';
     document.getElementById('sugestoes').innerHTML = '';
-    setTimeout(() => document.getElementById('nomeProduto').focus(), 80);
+    if (busca) filtrarProdutos();   // mostra se já existe algo parecido na lista
+    setTimeout(() => {
+      // Com nome preenchido, o cursor vai para o preço; sem nome, para o nome
+      document.getElementById(busca ? 'precoProduto' : 'nomeProduto').focus();
+    }, 80);
   }
 
   function abrirDetalhes(id, doCarrinho) {
