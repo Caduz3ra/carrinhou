@@ -190,12 +190,28 @@
     .row > * { flex: 1; min-width: 0; }
 
     /* ---------- Modo edição ---------- */
-    .edit-mode-container {
-      display: none; background: var(--danger-soft); border: 1px dashed rgba(248,113,113,.4);
-      border-radius: 12px; padding: 14px; margin-bottom: 14px;
+    /* ---------- Arrastar item (swipe) ---------- */
+    .swipe { position: relative; border-radius: 14px; overflow: hidden; animation: entrar .25s ease both; }
+    .swipe > .item-card {
+      position: relative; z-index: 1; margin-bottom: 0; animation: none;
+      touch-action: pan-y; -webkit-user-select: none; user-select: none;
+      transition: transform .28s cubic-bezier(.2,.8,.2,1), background .15s, border-color .15s;
     }
-    .edit-mode-container .titulo { font-size: 14px; font-weight: 700; color: var(--danger); margin-bottom: 4px; }
-    .edit-mode-container p { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+    .swipe.arrastando > .item-card { transition: none; }
+    .swipe.arrastando > .item-card:active { transform: none; }
+    .swipe-lado { position: absolute; top: 0; bottom: 0; display: flex; visibility: hidden; }
+    .swipe-lado.esq { left: 0; }
+    .swipe-lado.dir { right: 0; }
+    .swipe.mostra-esq .swipe-lado.esq, .swipe.mostra-dir .swipe-lado.dir { visibility: visible; }
+    .swipe-btn {
+      width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      font-size: 11px; font-weight: 600; border: none; padding: 0;
+    }
+    .swipe-btn svg { width: 20px; height: 20px; }
+    .swipe-btn.estrela { width: 78px; background: rgba(251, 191, 36, 0.16); color: var(--warn); }
+    .swipe-btn.estrela.on svg { fill: currentColor; }
+    .swipe-btn.editar { background: rgba(96, 165, 250, 0.16); color: #60a5fa; }
+    .swipe-btn.excluir { background: rgba(248, 113, 113, 0.18); color: var(--danger); }
 
     /* ---------- Itens ---------- */
     .item-card {
@@ -245,10 +261,9 @@
       background: var(--accent-soft); color: var(--accent); flex-shrink: 0;
     }
     .acao-add svg { width: 18px; height: 18px; }
-    .acao-tag { font-size: 12px; font-weight: 600; color: var(--danger); background: var(--danger-soft); padding: 6px 10px; border-radius: 8px; flex-shrink: 0; }
+    .acao-tag-removida { font-size: 12px; font-weight: 600; color: var(--danger); background: var(--danger-soft); padding: 6px 10px; border-radius: 8px; flex-shrink: 0; }
     .acao-sync { font-size: 12px; color: var(--muted); flex-shrink: 0; }
 
-    .check-excluir { width: 22px; height: 22px; accent-color: var(--danger); cursor: pointer; flex-shrink: 0; margin: 0; }
 
     .empty { text-align: center; padding: 28px 10px; color: var(--muted); font-size: 14px; }
     .empty svg { width: 36px; height: 36px; color: var(--faint); margin-bottom: 8px; stroke-width: 1.6; }
@@ -511,19 +526,6 @@
         <button class="icon-btn primary" onclick="abrirModalNovo()" title="Adicionar item">
           <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
-        <button class="icon-btn" id="btnModoEdicao" onclick="toggleModoEdicao()" title="Editar / Excluir">
-          <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </button>
-      </div>
-
-      <div class="edit-mode-container" id="painelEdicao">
-        <div class="titulo">Modo de edição</div>
-        <p>Marque os itens para excluir ou toque em um item para renomear.</p>
-        <button class="btn btn-danger" onclick="excluirSelecionados()">
-          <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-          Excluir selecionados
-        </button>
-        <button class="btn btn-ghost" onclick="toggleModoEdicao()">Sair da edição</button>
       </div>
 
       <div id="listaPendentes"><div class="empty">Carregando...</div></div>
@@ -729,7 +731,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.5</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.6</div>
   </div>
 </div>
 
@@ -767,7 +769,6 @@
   let timerSync = null;
 
   let carrinhoExpandido = false;
-  let modoEdicaoAtivo = false;
   let mostrandoHistorico = false;
   let histAbertos = new Set();
   const LS_FILTRO = 'carrinhou_filtro_estrela';
@@ -781,6 +782,7 @@
     hist: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     lista: '<svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
     bag: '<svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>',
+    lapis: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
     estrela: '<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg>',
     tag: '<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>'
   };
@@ -1484,10 +1486,6 @@
     let item = acharItem(id);
     if (!item) return;
 
-    if (modoEdicaoAtivo && !doCarrinho) {
-      abrirRenomear(item.id, item.nome);
-      return;
-    }
     document.getElementById('detalheId').value = item.id;
     document.getElementById('detalheNome').innerText = item.nome;
     document.getElementById('detalhePreco').value = item.preco ? precoTxt(item.preco) : '';
@@ -1508,12 +1506,105 @@
     document.getElementById(modalId).style.display = 'none';
   }
 
-  function toggleModoEdicao() {
-    modoEdicaoAtivo = !modoEdicaoAtivo;
-    document.getElementById('painelEdicao').style.display = modoEdicaoAtivo ? 'block' : 'none';
-    document.getElementById('btnModoEdicao').classList.toggle('ativo', modoEdicaoAtivo);
-    renderizar();
+  // ---------- Arrastar item: ← lápis/lixeira · → estrela ----------
+  const SWIPE_ESTRELA = 78;      // largura revelada ao arrastar para a direita
+  const SWIPE_ACOES = -148;      // largura revelada ao arrastar para a esquerda (2 botões)
+  let swipe = {};                // arrasto em andamento
+  let swipeAberto = null;        // item com ações abertas
+  let ignorarClique = false;
+  let renderAdiado = false;
+
+  function posicionarSwipe(el, pos) {
+    el.dataset.pos = pos;
+    el.querySelector('.item-card').style.transform = pos ? `translateX(${pos}px)` : '';
+    el.classList.toggle('mostra-esq', pos > 0);
+    el.classList.toggle('mostra-dir', pos < 0);
+    if (pos) swipeAberto = el;
+    else if (swipeAberto === el) swipeAberto = null;
   }
+  function fecharSwipe() { if (swipeAberto) posicionarSwipe(swipeAberto, 0); }
+
+  function iniciarSwipe(e) {
+    if (e.button) return;                                   // só botão principal / dedo
+    let card = e.target.closest('.swipe > .item-card');
+    if (!card) return;
+    let el = card.parentElement;
+    if (swipeAberto && swipeAberto !== el) fecharSwipe();
+    swipe = { el: el, card: card, pid: e.pointerId, x0: e.clientX, y0: e.clientY,
+              base: Number(el.dataset.pos || 0), x: Number(el.dataset.pos || 0), modo: null };
+  }
+  function moverSwipe(e) {
+    if (!swipe.el || e.pointerId !== swipe.pid) return;
+    let dx = e.clientX - swipe.x0, dy = e.clientY - swipe.y0;
+    if (!swipe.modo) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      swipe.modo = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';  // vertical = rolagem normal da lista
+      if (swipe.modo === 'h') {
+        swipe.el.classList.add('arrastando');
+        try { swipe.card.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+    }
+    if (swipe.modo !== 'h') return;
+    e.preventDefault();
+    let x = Math.max(SWIPE_ACOES - 24, Math.min(SWIPE_ESTRELA + 24, swipe.base + dx));
+    swipe.x = x;
+    swipe.card.style.transform = `translateX(${x}px)`;
+    swipe.el.classList.toggle('mostra-esq', x > 0);
+    swipe.el.classList.toggle('mostra-dir', x < 0);
+  }
+  function soltarSwipe(e) {
+    if (!swipe.el || e.pointerId !== swipe.pid) return;
+    let s0 = swipe;
+    swipe = {};
+    s0.el.classList.remove('arrastando');
+    if (s0.modo === 'h') {
+      ignorarClique = true;
+      setTimeout(() => { ignorarClique = false; }, 60);
+      let pos = s0.x > SWIPE_ESTRELA / 2 ? SWIPE_ESTRELA : s0.x < SWIPE_ACOES / 2 ? SWIPE_ACOES : 0;
+      posicionarSwipe(s0.el, pos);
+    }
+    if (renderAdiado) { renderAdiado = false; renderizar(); }
+  }
+
+  // Toque no item: se houver ações abertas, só fecha; senão abre os detalhes
+  function cliqueItem(id) {
+    if (ignorarClique) return;
+    if (swipeAberto) { fecharSwipe(); return; }
+    abrirDetalhes(id);
+  }
+
+  function acaoEstrela(id) {
+    let it = acharItem(id);
+    fecharSwipe();
+    if (!it) return;
+    executar({ t: 'upd', id: id, c: { estrela: !it.estrela } });
+    toast(it.estrela ? 'Estrela adicionada' : 'Estrela removida', 'ok');
+  }
+  function acaoRenomear(id) {
+    let it = acharItem(id);
+    fecharSwipe();
+    if (it) abrirRenomear(it.id, it.nome);
+  }
+  function acaoExcluir(id) {
+    let it = acharItem(id);
+    if (!it) return;
+    if (!confirm(`Excluir "${it.nome}" da lista?`)) { fecharSwipe(); return; }
+    swipeAberto = null;
+    executar({ t: 'del', ids: [String(id)] });
+    toast('Item excluído', 'ok');
+  }
+
+  (function ligarSwipe() {
+    let lista = document.getElementById('listaPendentes');
+    lista.addEventListener('pointerdown', iniciarSwipe);
+    lista.addEventListener('pointermove', moverSwipe, { passive: false });
+    lista.addEventListener('pointerup', soltarSwipe);
+    lista.addEventListener('pointercancel', soltarSwipe);
+    // Toque fora do item aberto fecha as ações
+    document.addEventListener('pointerdown', e => {
+      if (swipeAberto && !swipeAberto.contains(e.target)) fecharSwipe();
+    }, true);
+  })();
 
   function toggleFiltroEstrela() {
     filtroEstrela = !filtroEstrela;
@@ -1568,18 +1659,6 @@
     }
     fecharModal('modalRenomear');
     executar({ t: 'upd', id: id, c: { nome: novoNome } });
-  }
-
-  function excluirSelecionados() {
-    let checkboxes = document.querySelectorAll('.check-excluir:checked');
-    if (checkboxes.length === 0) {
-      toast('Selecione ao menos um item.', 'erro');
-      return;
-    }
-    if (!confirm(`Excluir ${checkboxes.length} item(ns) selecionado(s)?`)) return;
-    let ids = Array.from(checkboxes).map(cb => cb.value);
-    executar({ t: 'del', ids: ids });
-    toast('Itens excluídos', 'ok');
   }
 
   function finalizar() {
@@ -1695,6 +1774,8 @@
   }
 
   function renderizar() {
+    if (swipe.el && swipe.modo === 'h') { renderAdiado = true; return; }  // não redesenha no meio do arrasto
+    swipeAberto = null;
     let filtro = (document.getElementById('pesquisaPendente').value || '').toLowerCase();
     let itens = dadosGlobais.itens || [];
     let todosPendentes = itens.filter(i => i.status !== 'Carrinho');
@@ -1712,8 +1793,6 @@
     let ultimosPrecos = mapaUltimoPreco();
     let pendentesDiv = document.getElementById('listaPendentes');
     let posPend = capturarPosicoes(pendentesDiv);
-    // Mantém os itens marcados no modo edição quando a lista é redesenhada (ex.: ao sincronizar)
-    let marcados = new Set(Array.from(pendentesDiv.querySelectorAll('.check-excluir:checked')).map(c => c.value));
     if (pendentes.length === 0) {
       pendentesDiv.innerHTML = vazio(ICON.lista,
         !carregado ? 'Carregando...' : filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
@@ -1721,26 +1800,30 @@
       pendentesDiv.innerHTML = pendentes.map(i => {
         let ultimo = ultimosPrecos.get(String(i.nome).toLowerCase().trim());
         let badgeUltima = ultimo != null ? `<div class="last-price">${ICON.tag} Última compra: ${moeda(ultimo)}</div>` : '';
-        let acao = !modoEdicaoAtivo
-          ? `<span class="acao-add" title="Adicionar ao carrinho">${ICON.cart}</span>`
-          : '<span class="acao-tag">Renomear</span>';
+        let id = esc(i.id);
         return `
-          <div class="item-card${i.estrela ? ' estrela' : ''}" data-id="${esc(i.id)}" onclick="abrirDetalhes('${esc(i.id)}')">
-            ${modoEdicaoAtivo ? `<input type="checkbox" class="check-excluir" value="${esc(i.id)}"${marcados.has(String(i.id)) ? ' checked' : ''} onclick="event.stopPropagation()">` : ''}
-            <div class="item-info">
-              <div class="item-nome">
-                ${modoEdicaoAtivo
-                  ? `<span class="estrela-btn fixa${i.estrela ? ' on' : ''}" onclick="event.stopPropagation()">${ICON.estrela}</span>`
-                  : `<button class="estrela-btn${i.estrela ? ' on' : ''}" title="${i.estrela ? 'Remover estrela' : 'Marcar com estrela'}" onclick="event.stopPropagation(); toggleEstrela('${esc(i.id)}')">${ICON.estrela}</button>`}
-                <span class="nome-txt">${esc(i.nome)}</span>
-              </div>
-              <div class="item-meta">
-                <span class="chip">${esc(i.quantidade || 1)}x</span>
-                <span class="price">${moeda(i.preco)} un</span>
-              </div>
-              ${badgeUltima}
+          <div class="swipe" data-id="${id}">
+            <div class="swipe-lado esq">
+              <button class="swipe-btn estrela${i.estrela ? ' on' : ''}" onclick="acaoEstrela('${id}')">${ICON.estrela}<span>${i.estrela ? 'Remover' : 'Estrela'}</span></button>
             </div>
-            ${acao}
+            <div class="swipe-lado dir">
+              <button class="swipe-btn editar" onclick="acaoRenomear('${id}')">${ICON.lapis}<span>Renomear</span></button>
+              <button class="swipe-btn excluir" onclick="acaoExcluir('${id}')">${ICON.lixo}<span>Excluir</span></button>
+            </div>
+            <div class="item-card${i.estrela ? ' estrela' : ''}" onclick="cliqueItem('${id}')">
+              <div class="item-info">
+                <div class="item-nome">
+                  ${i.estrela ? `<span class="estrela-btn on fixa">${ICON.estrela}</span>` : ''}
+                  <span class="nome-txt">${esc(i.nome)}</span>
+                </div>
+                <div class="item-meta">
+                  <span class="chip">${esc(i.quantidade || 1)}x</span>
+                  <span class="price">${moeda(i.preco)} un</span>
+                </div>
+                ${badgeUltima}
+              </div>
+              <span class="acao-add" title="Adicionar ao carrinho">${ICON.cart}</span>
+            </div>
           </div>`;
       }).join('');
     }
