@@ -881,7 +881,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.3</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.4</div>
   </div>
 </div>
 
@@ -1049,7 +1049,9 @@
             d.historico.push(compra);
             d.historicoTotal = (d.historicoTotal || 0) + 1;
           } else {
-            d.historico = [compra];          // Free: só a última aparece; as anteriores ficam borradas
+            // Free: só a última aparece; a que era a última vira "reserva" escondida
+            let ultima = d.historico.slice().sort((a, b) => new Date(b.data) - new Date(a.data))[0];
+            d.historico = ultima ? [compra, ultima] : [compra];
             d.historicoTotal = (d.historicoTotal || 0) + 1;
           }
         }
@@ -2154,6 +2156,8 @@
     let carrinho = itens.filter(i => i.status === 'Carrinho').sort(ordenar);
     let historico = (dadosGlobais.historico || []).slice()
       .sort((a, b) => new Date(b.data) - new Date(a.data));         // mais recente primeiro
+    // Free: mostra só a última; a segunda fica guardada como reserva (aparece na hora se a última for excluída)
+    if (!ehPro()) historico = historico.slice(0, 1);
 
     document.getElementById('countPendentes').innerText = todosPendentes.length;
     let totalHist = Math.max(historico.length, dadosGlobais.historicoTotal || 0);
