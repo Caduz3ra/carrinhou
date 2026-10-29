@@ -357,7 +357,7 @@
 
     /* ---------- Toast ---------- */
     .toast {
-      position: fixed; left: 50%; top: 18px; transform: translate(-50%, -20px);
+      position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top)); /* abaixo da ilha dinâmica / notch */ transform: translate(-50%, -20px);
       background: var(--surface-3); color: var(--text); border: 1px solid var(--border-2);
       padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500;
       box-shadow: var(--shadow); opacity: 0; pointer-events: none; z-index: 200;
@@ -729,7 +729,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.2</div>
+    <div class="perfil-rodape">Carrinhou · versão 2.3</div>
   </div>
 </div>
 
