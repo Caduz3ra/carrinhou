@@ -510,6 +510,14 @@
       background: linear-gradient(135deg, var(--ouro), var(--ouro-2)); color: var(--ouro-ink);
     }
     .pro-ativo { background: var(--ouro-soft); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: 14px; color: var(--text); }
+    /* Carregando: 3 bolinhas pulando */
+    .carregando-dots { display: inline-flex; gap: 7px; margin-bottom: 10px; }
+    .carregando-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: pulo 1s ease-in-out infinite; }
+    .carregando-dots i:nth-child(2) { animation-delay: .15s; }
+    .carregando-dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulo { 0%, 70%, 100% { transform: translateY(0); opacity: .35; } 35% { transform: translateY(-9px); opacity: 1; } }
+    .hist-carregando { grid-column: 1 / -1; text-align: center; padding: 22px 10px; color: var(--muted); font-size: 13px;
+      background: var(--surface-2); border: 1px dashed var(--border-2); border-radius: 14px; }
     .hist-card.bloqueada { cursor: pointer; }
     .hist-card.bloqueada .hist-total { color: var(--muted); }
     .hist-bloqueio {
@@ -613,7 +621,7 @@
         </button>
       </div>
 
-      <div id="listaPendentes"><div class="empty">Carregando...</div></div>
+      <div id="listaPendentes"><div class="empty"><div class="carregando-dots"><i></i><i></i><i></i></div><div>Carregando sua lista...</div></div></div>
     </section>
   </main>
 
@@ -873,7 +881,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.2</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.3</div>
   </div>
 </div>
 
@@ -1645,7 +1653,7 @@
         atualizarStatusSync();
         if (!carregado) {
           document.getElementById('listaPendentes').innerHTML =
-            '<div class="msg-erro">Sem conexão com o servidor. Tentando novamente...</div>';
+            carregandoHTML('Conexão lenta ou indisponível. Tentando novamente...');
         }
         agendarSync(15000);
       });
@@ -1753,6 +1761,10 @@
     t.innerText = msg;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.className = 'toast', 2200);
+  }
+
+  function carregandoHTML(texto) {
+    return `<div class="empty"><div class="carregando-dots"><i></i><i></i><i></i></div><div>${texto}</div></div>`;
   }
 
   function vazio(icone, texto) {
@@ -2034,6 +2046,7 @@
     let desc = h ? `${formatarData(h.data)} - ${moeda(h.total)}` : 'este registro';
     if (!confirm(`Excluir a compra de ${desc} do histórico?`)) return;
     executar({ t: 'delHist', id: String(id) });
+    sincronizarAgora();          // no Free, já traz a compra anterior
     toast('Registro excluído', 'ok');
   }
 
@@ -2152,8 +2165,8 @@
     let pendentesDiv = document.getElementById('listaPendentes');
     let posPend = capturarPosicoes(pendentesDiv);
     if (pendentes.length === 0) {
-      pendentesDiv.innerHTML = vazio(ICON.lista,
-        !carregado ? 'Carregando...' : filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
+      pendentesDiv.innerHTML = !carregado ? carregandoHTML('Carregando sua lista...') : vazio(ICON.lista,
+        filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
     } else {
       pendentesDiv.innerHTML = pendentes.map(i => {
         let chaveNome = String(i.nome).toLowerCase().trim();
@@ -2225,7 +2238,10 @@
 
     // Histórico
     let historicoDiv = document.getElementById('listaHistorico');
-    if (historico.length === 0) {
+    if (historico.length === 0 && totalHist > 0) {
+      // Free: a compra exibida foi excluída e a anterior ainda está vindo do servidor
+      historicoDiv.innerHTML = `<div class="hist-carregando"><div class="carregando-dots"><i></i><i></i><i></i></div><div>Carregando compra anterior...</div></div>`;
+    } else if (historico.length === 0) {
       historicoDiv.innerHTML = vazio(ICON.hist, 'Nenhuma compra registrada.');
     } else {
       historicoDiv.innerHTML = historico.map(h => {
