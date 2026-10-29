@@ -881,7 +881,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.4</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.5</div>
   </div>
 </div>
 
@@ -1063,7 +1063,10 @@
       case 'delHist': {
         let antes = d.historico.length;
         d.historico = d.historico.filter(h => String(h.id) !== String(op.id));
-        if (d.historico.length < antes) d.historicoTotal = Math.max(0, (d.historicoTotal || 1) - 1);
+        if (d.historico.length < antes) {
+          d.historicoTotal = Math.max(0, (d.historicoTotal || 1) - 1);
+          recalcularPrecosLocais(d);   // "Última compra" atualiza na hora, sem esperar a internet
+        }
         break;
       }
     }
@@ -2097,6 +2100,20 @@
 
   // Mapa nome -> preço da compra mais recente.
   // Vem pronto do servidor; compras finalizadas que ainda não subiram (fila) entram por cima.
+  // Recalcula "produto -> último preço" com as compras que estão no aparelho.
+  // Só quando o aparelho tem TODAS as compras (senão espera o servidor, que tem a conta completa).
+  function recalcularPrecosLocais(d) {
+    let hist = (d.historico || []).slice().sort((a, b) => new Date(a.data) - new Date(b.data));
+    if ((d.historicoTotal || 0) > hist.length) return;
+    let chave = n => String(n).toLowerCase().trim();
+    let m = new Map();
+    hist.forEach(h => (h.itens || []).forEach(x => m.set(chave(x.nome), [x.nome, Number(x.preco)])));
+    let pro = ehPro(d);
+    let ultima = hist[hist.length - 1];
+    let liberados = new Set(ultima ? (ultima.itens || []).map(x => chave(x.nome)).sort().slice(0, LIMITE_FREE) : []);
+    d.ultimosPrecos = Array.from(m.entries()).map(([k, [nome, preco]]) => [nome, pro || liberados.has(k) ? preco : null]);
+  }
+
   // Valor null = existe preço, mas está bloqueado no plano Free (aparece borrado).
   function mapaUltimoPreco() {
     let m = new Map();
