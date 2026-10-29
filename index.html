@@ -455,6 +455,72 @@
     .box-senha { display: none; padding: 4px 2px 8px; }
     .box-senha.aberto { display: block; animation: entrar .2s ease; }
     .carregar-mais { grid-column: 1 / -1; margin-top: 4px; }
+
+    /* ---------- Plano Pro ---------- */
+    :root { --ouro: #fbbf24; --ouro-2: #f59e0b; --ouro-ink: #2a1a02; --ouro-soft: rgba(251, 191, 36, 0.12); }
+    .btn-pro { background: linear-gradient(135deg, var(--ouro), var(--ouro-2)); color: var(--ouro-ink); }
+    .btn-pro:hover { opacity: .92; }
+    .pro-icone {
+      width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 12px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--ouro), var(--ouro-2)); color: var(--ouro-ink);
+      box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);
+    }
+    .pro-icone svg { width: 26px; height: 26px; fill: currentColor; stroke: none; }
+    .banner-pro {
+      width: 100%; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px 14px; text-align: left;
+      border-radius: var(--radius-sm); border: 1px solid rgba(251, 191, 36, 0.3); color: var(--text);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(245, 158, 11, 0.06));
+    }
+    .banner-pro .pro-icone { width: 36px; height: 36px; border-radius: 11px; margin: 0; flex-shrink: 0; box-shadow: none; }
+    .banner-pro .pro-icone svg { width: 18px; height: 18px; }
+    .banner-pro .txt { flex: 1; min-width: 0; }
+    .banner-pro b { display: block; font-size: 14px; color: var(--ouro); }
+    .banner-pro small { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .banner-pro > svg { color: var(--ouro); width: 18px; height: 18px; }
+    .last-price.bloqueado { cursor: pointer; color: var(--muted); background: var(--surface-3); }
+    .borrado { filter: blur(4px); -webkit-user-select: none; user-select: none; }
+    .tag-pro {
+      font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 1px 6px; border-radius: 6px; margin-left: 2px;
+      background: linear-gradient(135deg, var(--ouro), var(--ouro-2)); color: var(--ouro-ink);
+    }
+    .modal-centro { text-align: center; }
+    .modal-centro h3 { margin-bottom: 8px; }
+    .paywall-texto { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
+    .paywall-texto b { color: var(--text); }
+    #modalPro .modal-content { max-height: 92vh; overflow-y: auto; }
+    .tabela-planos { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 16px; text-align: left; }
+    .tabela-planos th, .tabela-planos td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    .tabela-planos th { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .tabela-planos td:first-child { color: var(--text); }
+    .tabela-planos td:not(:first-child), .tabela-planos th:not(:first-child) { text-align: center; width: 26%; color: var(--muted); }
+    .tabela-planos .col-pro { color: var(--ouro) !important; font-weight: 700; background: var(--ouro-soft); }
+    .opcoes-preco { display: flex; gap: 8px; margin-bottom: 14px; }
+    .opcao-preco {
+      flex: 1; position: relative; padding: 12px 10px; border-radius: 12px; text-align: center;
+      background: var(--surface-2); border: 1.5px solid var(--border); color: var(--text);
+    }
+    .opcao-preco.sel { border-color: var(--ouro); background: var(--ouro-soft); }
+    .opcao-preco .nome { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .opcao-preco .valor { font-size: 18px; font-weight: 800; margin-top: 2px; }
+    .opcao-preco .valor small { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .opcao-preco .extra { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .opcao-preco .selo {
+      position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+      font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--ouro), var(--ouro-2)); color: var(--ouro-ink);
+    }
+    .pro-ativo { background: var(--ouro-soft); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: 14px; color: var(--text); }
+    .hist-card.bloqueada { cursor: pointer; }
+    .hist-card.bloqueada .hist-total { color: var(--muted); }
+    .hist-bloqueio {
+      grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; padding: 12px 14px;
+      border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.3); background: var(--ouro-soft);
+      color: var(--text); font-size: 13px; text-align: left; width: 100%;
+    }
+    .hist-bloqueio .pro-icone { width: 32px; height: 32px; border-radius: 10px; margin: 0; flex-shrink: 0; box-shadow: none; }
+    .hist-bloqueio .pro-icone svg { width: 16px; height: 16px; }
+    .hist-bloqueio .txt { flex: 1; }
+    .hist-bloqueio b { color: var(--ouro); }
     .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -525,6 +591,11 @@
 
   <!-- Tela Principal -->
   <main id="viewPrincipal">
+    <button class="banner-pro" id="bannerPro" onclick="abrirPro()" style="display:none">
+      <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
+      <span class="txt"><b>Desbloqueie o Pro</b><small>Estrelas ilimitadas, histórico completo e preços</small></span>
+      <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
     <section class="panel">
       <div class="panel-head">
         <h2>Lista de Compras</h2>
@@ -705,6 +776,55 @@
   </div>
 </div>
 
+<!-- Modal Carrinhou Pro (comparação Free x Pro) -->
+<div class="modal" id="modalPro" onclick="if(event.target===this)fecharModal('modalPro')">
+  <div class="modal-content">
+    <div class="modal-centro">
+      <div class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></div>
+      <h3>Carrinhou Pro</h3>
+      <p class="paywall-texto">Compre melhor, sem limites.</p>
+    </div>
+    <div class="pro-ativo" id="proAtivo" style="display:none"></div>
+    <table class="tabela-planos">
+      <thead><tr><th></th><th>Free</th><th class="col-pro">Pro</th></tr></thead>
+      <tbody>
+        <tr><td>Lista, carrinho e uso offline</td><td>✓</td><td class="col-pro">✓</td></tr>
+        <tr><td>Itens com estrela</td><td>3</td><td class="col-pro">Ilimitados</td></tr>
+        <tr><td>Histórico de compras</td><td>Última compra</td><td class="col-pro">Completo</td></tr>
+        <tr><td>Último preço dos produtos</td><td>3 itens</td><td class="col-pro">Todos</td></tr>
+      </tbody>
+    </table>
+    <div id="proAssinar">
+      <div class="opcoes-preco">
+        <button type="button" class="opcao-preco" id="planoMensal" onclick="escolherPlano('mensal')">
+          <div class="nome">Mensal</div>
+          <div class="valor" id="precoMensal"></div>
+          <div class="extra">cancele quando quiser</div>
+        </button>
+        <button type="button" class="opcao-preco sel" id="planoAnual" onclick="escolherPlano('anual')">
+          <span class="selo" id="seloAnual"></span>
+          <div class="nome">Anual</div>
+          <div class="valor" id="precoAnual"></div>
+          <div class="extra" id="precoAnualMes"></div>
+        </button>
+      </div>
+      <button class="btn btn-pro" onclick="assinarPro()">Assinar o Pro</button>
+    </div>
+    <button class="btn btn-ghost" onclick="fecharModal('modalPro')">Fechar</button>
+  </div>
+</div>
+
+<!-- Modal aviso de limite do plano Free -->
+<div class="modal" id="modalPaywall" onclick="if(event.target===this)fecharModal('modalPaywall')">
+  <div class="modal-content modal-centro">
+    <div class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></div>
+    <h3 id="paywallTitulo"></h3>
+    <p class="paywall-texto" id="paywallTexto"></p>
+    <button class="btn btn-pro" onclick="fecharModal('modalPaywall'); abrirPro()">Conhecer o Pro</button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalPaywall')">Agora não</button>
+  </div>
+</div>
+
 <!-- Modal Minha conta -->
 <div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
   <div class="modal-content">
@@ -725,6 +845,9 @@
       </div>
     </div>
 
+    <button class="perfil-opcao" id="opcaoPlano" onclick="fecharModal('modalPerfil'); abrirPro()">
+      <span id="opcaoPlanoTxt">Conhecer o Pro</span> <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
     <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
       Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
@@ -753,7 +876,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 2.8</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.1</div>
   </div>
 </div>
 
@@ -916,8 +1039,14 @@
         break;
       case 'fin':
         if (!d.historico.some(h => String(h.id) === String(op.id))) {
-          d.historico.push({ id: op.id, data: op.data, total: op.total, itens: op.itens || [] });
-          d.historicoTotal = (d.historicoTotal || 0) + 1;
+          let compra = { id: op.id, data: op.data, total: op.total, itens: op.itens || [] };
+          if (ehPro(d)) {
+            d.historico.push(compra);
+            d.historicoTotal = (d.historicoTotal || 0) + 1;
+          } else {
+            d.historico = [compra];          // Free: só a última aparece; as anteriores ficam borradas
+            d.historicoTotal = (d.historicoTotal || 0) + 1;
+          }
         }
         d.itens.forEach(i => {
           if (op.ids.includes(String(i.id))) { i.status = 'Pendente'; i.quantidade = 1; }
@@ -1217,6 +1346,69 @@
     mostrarLogin(msg, !!msg);
   }
 
+  // ---------- Plano Free / Pro ----------
+  const LIMITE_FREE = 3;                 // estrelas e "último preço" liberados no Free
+  const PRECO_MENSAL = 6.90;
+  const PRECO_ANUAL = 49.90;
+  let planoEscolhido = 'anual';
+
+  function ehPro(d) {
+    let p = (d || dadosGlobais).perfil || {};
+    return p.plano === 'pro' && (!p.pro_ate || new Date(p.pro_ate) > new Date());
+  }
+
+  function abrirPaywall(motivo) {
+    const textos = {
+      estrela: ['Limite de estrelas do plano Free',
+                `No plano Free você pode marcar até <b>${LIMITE_FREE} itens</b> com estrela.<br>Assine o <b>Pro</b> para marcar quantos quiser.`],
+      preco:   ['Veja o último preço de tudo',
+                `No plano Free, o último preço aparece em <b>${LIMITE_FREE} itens</b> da sua última compra.<br>Com o <b>Pro</b>, você vê o preço de todos os produtos.`],
+      historico: ['Histórico completo no Pro',
+                'No plano Free aparece só a última compra. As anteriores ficam guardadas.<br>Com o <b>Pro</b>, você vê todo o histórico de compras e de preços.'],
+      compraFinalizada: ['Compra finalizada!',
+                'No plano Free você vê só a <b>última compra</b> no histórico. As anteriores continuam guardadas.<br><br>Assine o <b>Pro</b> para ver todo o histórico de compras e de preços.']
+    };
+    let [titulo, texto] = textos[motivo] || textos.preco;
+    document.getElementById('paywallTitulo').innerText = titulo;
+    document.getElementById('paywallTexto').innerHTML = texto;
+    document.getElementById('modalPaywall').style.display = 'flex';
+  }
+
+  function abrirPro() {
+    let pro = ehPro();
+    let p = dadosGlobais.perfil || {};
+    let ativo = document.getElementById('proAtivo');
+    ativo.style.display = pro ? 'block' : 'none';
+    ativo.innerHTML = pro
+      ? `<b>Você é Pro!</b> ${p.pro_ate ? 'Sua assinatura vale até ' + esc(formatarData(p.pro_ate).slice(0, 10)) + '.' : 'Aproveite todos os recursos.'}`
+      : '';
+    document.getElementById('proAssinar').style.display = pro ? 'none' : 'block';
+    let fmt = v => 'R$ ' + precoTxt(v);
+    document.getElementById('precoMensal').innerHTML = `${fmt(PRECO_MENSAL)}<small>/mês</small>`;
+    document.getElementById('precoAnual').innerHTML = `${fmt(PRECO_ANUAL)}<small>/ano</small>`;
+    document.getElementById('precoAnualMes').innerText = `≈ ${fmt(PRECO_ANUAL / 12)} por mês`;
+    let economia = Math.round((1 - PRECO_ANUAL / (PRECO_MENSAL * 12)) * 100);
+    document.getElementById('seloAnual').innerText = `ECONOMIZE ${economia}%`;
+    escolherPlano(planoEscolhido);
+    document.getElementById('modalPro').style.display = 'flex';
+  }
+
+  function escolherPlano(qual) {
+    planoEscolhido = qual;
+    document.getElementById('planoMensal').classList.toggle('sel', qual === 'mensal');
+    document.getElementById('planoAnual').classList.toggle('sel', qual === 'anual');
+  }
+
+  function assinarPro() {
+    toast('Pagamento disponível em breve!', '');   // Fase 5: Mercado Pago
+  }
+
+  function atualizarPlanoNaTela() {
+    let pro = ehPro();
+    document.getElementById('bannerPro').style.display = pro || !carregado ? 'none' : 'flex';
+    document.getElementById('opcaoPlanoTxt').innerText = pro ? 'Meu plano Pro' : 'Conhecer o Pro';
+  }
+
   function atualizarConta() {
     let p = dadosGlobais.perfil || {};
     let email = p.email || (sessao && sessao.user.email) || '';
@@ -1226,7 +1418,7 @@
     document.getElementById('perfilAvatar').innerText = inicial;
     document.getElementById('perfilNomeTxt').innerText = nome;
     document.getElementById('perfilEmailTxt').innerText = email;
-    let pro = p.plano === 'pro';
+    let pro = ehPro();
     let tag = document.getElementById('perfilPlano');
     tag.innerText = pro ? 'Pro' : 'Free';
     tag.classList.toggle('pro', pro);
@@ -1347,6 +1539,7 @@
 
   // Junta a resposta do servidor aos dados locais
   function mesclarResposta(d) {
+    let planoAntes = dadosGlobais.perfil && dadosGlobais.perfil.plano;
     if (d.completo) {
       dadosGlobais = {
         itens: d.itens || [], historico: d.historico || [],
@@ -1358,16 +1551,26 @@
       (d.itens_removidos || []).forEach(id => porId.delete(String(id)));
       dadosGlobais.itens = Array.from(porId.values());
 
-      let hist = new Map((dadosGlobais.historico || []).map(h => [String(h.id), h]));
-      (d.historico || []).forEach(h => hist.set(String(h.id), h));
-      (d.historico_removidos || []).forEach(id => hist.delete(String(id)));
-      dadosGlobais.historico = Array.from(hist.values());
+      if (d.historico_substituir) {
+        dadosGlobais.historico = d.historico || [];       // Free: só a última compra
+      } else {
+        let hist = new Map((dadosGlobais.historico || []).map(h => [String(h.id), h]));
+        (d.historico || []).forEach(h => hist.set(String(h.id), h));
+        (d.historico_removidos || []).forEach(id => hist.delete(String(id)));
+        dadosGlobais.historico = Array.from(hist.values());
+      }
 
       if (d.ultimos_precos) dadosGlobais.ultimosPrecos = d.ultimos_precos;
       dadosGlobais.historicoTotal = d.historico_total || 0;
     }
     dadosGlobais.perfil = d.perfil || dadosGlobais.perfil || null;
     dadosGlobais.cursor = d.agora;
+    // Plano mudou (virou Pro ou venceu): baixa tudo de novo com as regras do novo plano
+    let planoAgora = dadosGlobais.perfil && dadosGlobais.perfil.plano;
+    if (!d.completo && planoAntes && planoAgora && planoAntes !== planoAgora) {
+      dadosGlobais.cursor = null;
+      setTimeout(sincronizarAgora, 50);
+    }
     dadosGlobais.vs = VERSAO_SYNC;
     dadosGlobais.dono = sessao.user.id;
   }
@@ -1710,6 +1913,11 @@
     let it = acharItem(id);
     fecharSwipe();
     if (!it) return;
+    let comEstrela = (dadosGlobais.itens || []).filter(i => i.estrela).length;
+    if (!it.estrela && !ehPro() && comEstrela >= LIMITE_FREE) {
+      abrirPaywall('estrela');
+      return;
+    }
     executar({ t: 'upd', id: id, c: { estrela: !it.estrela } });
     toast(it.estrela ? 'Estrela adicionada' : 'Estrela removida', 'ok');
   }
@@ -1800,6 +2008,8 @@
       toast('O carrinho está vazio!', 'erro');
       return;
     }
+    // Free com compras anteriores: depois de finalizar, mostra o convite para o Pro
+    let mostrarConvitePro = !ehPro() && (dadosGlobais.historicoTotal || 0) >= 1;
     let total = itensCarrinho.reduce((acc, i) => acc + Number(i.preco || 0) * Number(i.quantidade || 1), 0);
     let itensCompra = itensCarrinho
       .map(i => ({ nome: i.nome, qtd: Number(i.quantidade || 1), preco: Number(i.preco || 0) }))
@@ -1811,7 +2021,8 @@
       total: Math.round(total * 100) / 100, itens: itensCompra,
       ids: itensCarrinho.map(i => String(i.id))
     });
-    toast('Compra finalizada!', 'ok');
+    if (mostrarConvitePro) abrirPaywall('compraFinalizada');
+    else toast('Compra finalizada!', 'ok');
   }
 
   function excluirHistorico(id) {
@@ -1867,11 +2078,17 @@
 
   // Mapa nome -> preço da compra mais recente.
   // Vem pronto do servidor; compras finalizadas que ainda não subiram (fila) entram por cima.
+  // Valor null = existe preço, mas está bloqueado no plano Free (aparece borrado).
   function mapaUltimoPreco() {
     let m = new Map();
-    (dadosGlobais.ultimosPrecos || []).forEach(([nome, preco]) => m.set(String(nome).toLowerCase().trim(), Number(preco)));
-    fila.filter(op => op.t === 'fin').forEach(op =>
-      (op.itens || []).forEach(x => m.set(String(x.nome).toLowerCase().trim(), Number(x.preco))));
+    let chave = n => String(n).toLowerCase().trim();
+    (dadosGlobais.ultimosPrecos || []).forEach(([nome, preco]) => m.set(chave(nome), preco == null ? null : Number(preco)));
+    let pro = ehPro();
+    fila.filter(op => op.t === 'fin').forEach(op => {
+      let itens = (op.itens || []).slice().sort((a, b) => chave(a.nome).localeCompare(chave(b.nome)));
+      if (!pro) for (let k of m.keys()) m.set(k, null);      // Free: só a última compra conta
+      itens.forEach((x, idx) => m.set(chave(x.nome), pro || idx < LIMITE_FREE ? Number(x.preco) : null));
+    });
     return m;
   }
 
@@ -1923,6 +2140,7 @@
 
     document.getElementById('countPendentes').innerText = todosPendentes.length;
     let totalHist = Math.max(historico.length, dadosGlobais.historicoTotal || 0);
+    atualizarPlanoNaTela();
     document.getElementById('countHistorico').innerText = totalHist;
 
     // Pendentes
@@ -1934,8 +2152,12 @@
         !carregado ? 'Carregando...' : filtro ? 'Nenhum item encontrado.' : filtroEstrela ? 'Nenhum item com estrela.' : 'Nenhum item pendente.');
     } else {
       pendentesDiv.innerHTML = pendentes.map(i => {
-        let ultimo = ultimosPrecos.get(String(i.nome).toLowerCase().trim());
-        let badgeUltima = ultimo != null ? `<div class="last-price">${ICON.tag} Última compra: ${moeda(ultimo)}</div>` : '';
+        let chaveNome = String(i.nome).toLowerCase().trim();
+        let ultimo = ultimosPrecos.get(chaveNome);
+        let badgeUltima = !ultimosPrecos.has(chaveNome) ? ''
+          : ultimo == null
+            ? `<div class="last-price bloqueado" onclick="event.stopPropagation(); abrirPaywall('preco')">${ICON.tag} Última compra: <span class="borrado">R$ 00,00</span><span class="tag-pro">PRO</span></div>`
+            : `<div class="last-price">${ICON.tag} Última compra: ${moeda(ultimo)}</div>`;
         let id = esc(i.id);
         return `
           <div class="swipe" data-id="${id}">
@@ -2032,7 +2254,27 @@
           </div>`;
       }).join('');
       let faltam = totalHist - historico.length;
-      if (faltam > 0) {
+      if (!ehPro()) {
+        if (faltam > 0) {
+          // Free: compras anteriores aparecem borradas (o servidor nem envia os dados delas)
+          historicoDiv.innerHTML += `
+            <button class="hist-bloqueio" onclick="abrirPro()">
+              <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
+              <span class="txt"><b>${faltam} compra${faltam > 1 ? 's' : ''} anterior${faltam > 1 ? 'es' : ''}</b> guardada${faltam > 1 ? 's' : ''}.<br>Assine o Pro para ver todo o histórico.</span>
+            </button>` +
+            Array.from({ length: Math.min(faltam, 5) }, () => `
+            <div class="hist-card bloqueada" onclick="abrirPaywall('historico')">
+              <div class="hist-top">
+                <span class="hist-data">${ICON.cal} <span class="borrado">00/00/0000 00:00</span></span>
+                <span class="hist-total borrado">R$ 000,00</span>
+              </div>
+              <div class="hist-sub">
+                <span class="borrado">00 produtos · 00 unidades</span>
+                <span class="tag-pro">PRO</span>
+              </div>
+            </div>`).join('');
+        }
+      } else if (faltam > 0) {
         historicoDiv.innerHTML += `
           <button class="btn btn-ghost carregar-mais" onclick="carregarMaisHistorico()"${carregandoHistorico ? ' disabled' : ''}>
             ${carregandoHistorico ? 'Carregando...' : `Carregar mais (${faltam} compra${faltam > 1 ? 's' : ''} antiga${faltam > 1 ? 's' : ''})`}
