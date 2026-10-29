@@ -467,7 +467,7 @@
     }
     .pro-icone svg { width: 26px; height: 26px; fill: currentColor; stroke: none; }
     .banner-pro {
-      width: 100%; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 12px 14px; text-align: left;
+      width: 100%; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding: 12px 14px; text-align: left;
       border-radius: var(--radius-sm); border: 1px solid rgba(251, 191, 36, 0.3); color: var(--text);
       background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(245, 158, 11, 0.06));
     }
@@ -591,11 +591,6 @@
 
   <!-- Tela Principal -->
   <main id="viewPrincipal">
-    <button class="banner-pro" id="bannerPro" onclick="abrirPro()" style="display:none">
-      <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
-      <span class="txt"><b>Desbloqueie o Pro</b><small>Estrelas ilimitadas, histórico completo e preços</small></span>
-      <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
-    </button>
     <section class="panel">
       <div class="panel-head">
         <h2>Lista de Compras</h2>
@@ -781,8 +776,8 @@
   <div class="modal-content">
     <div class="modal-centro">
       <div class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></div>
-      <h3>Carrinhou Pro</h3>
-      <p class="paywall-texto">Compre melhor, sem limites.</p>
+      <h3 id="proTitulo">Carrinhou Pro</h3>
+      <p class="paywall-texto" id="proSub">Compre melhor, sem limites.</p>
     </div>
     <div class="pro-ativo" id="proAtivo" style="display:none"></div>
     <table class="tabela-planos">
@@ -810,7 +805,7 @@
       </div>
       <button class="btn btn-pro" onclick="assinarPro()">Assinar o Pro</button>
     </div>
-    <button class="btn btn-ghost" onclick="fecharModal('modalPro')">Fechar</button>
+    <button class="btn btn-ghost" id="btnProFechar" onclick="fecharModal('modalPro')">Fechar</button>
   </div>
 </div>
 
@@ -845,8 +840,10 @@
       </div>
     </div>
 
-    <button class="perfil-opcao" id="opcaoPlano" onclick="fecharModal('modalPerfil'); abrirPro()">
-      <span id="opcaoPlanoTxt">Conhecer o Pro</span> <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    <button class="banner-pro" id="opcaoPlano" onclick="fecharModal('modalPerfil'); abrirPro()">
+      <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
+      <span class="txt"><b id="opcaoPlanoTxt">Conhecer o Pro</b><small id="opcaoPlanoSub">Estrelas ilimitadas, histórico completo e preços</small></span>
+      <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
     <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
       Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
@@ -876,7 +873,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.1</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.2</div>
   </div>
 </div>
 
@@ -1374,7 +1371,14 @@
     document.getElementById('modalPaywall').style.display = 'flex';
   }
 
-  function abrirPro() {
+  // aposCompra = true: aberto automaticamente ao finalizar a compra (plano Free)
+  function abrirPro(aposCompra) {
+    aposCompra = aposCompra === true;
+    document.getElementById('proTitulo').innerText = aposCompra ? 'Compra finalizada!' : 'Carrinhou Pro';
+    document.getElementById('proSub').innerHTML = aposCompra
+      ? 'No plano Free você vê só a <b>última compra</b> no histórico. As anteriores ficam guardadas.<br>Assine o <b>Pro</b> e tenha acesso a tudo:'
+      : 'Compre melhor, sem limites.';
+    document.getElementById('btnProFechar').innerText = aposCompra ? 'Continuar sem assinar' : 'Fechar';
     let pro = ehPro();
     let p = dadosGlobais.perfil || {};
     let ativo = document.getElementById('proAtivo');
@@ -1405,8 +1409,8 @@
 
   function atualizarPlanoNaTela() {
     let pro = ehPro();
-    document.getElementById('bannerPro').style.display = pro || !carregado ? 'none' : 'flex';
     document.getElementById('opcaoPlanoTxt').innerText = pro ? 'Meu plano Pro' : 'Conhecer o Pro';
+    document.getElementById('opcaoPlanoSub').innerText = pro ? 'Você tem acesso a todos os recursos' : 'Estrelas ilimitadas, histórico completo e preços';
   }
 
   function atualizarConta() {
@@ -2008,8 +2012,8 @@
       toast('O carrinho está vazio!', 'erro');
       return;
     }
-    // Free com compras anteriores: depois de finalizar, mostra o convite para o Pro
-    let mostrarConvitePro = !ehPro() && (dadosGlobais.historicoTotal || 0) >= 1;
+    // Free: depois de finalizar, sempre mostra o convite para o Pro
+    let mostrarConvitePro = !ehPro();
     let total = itensCarrinho.reduce((acc, i) => acc + Number(i.preco || 0) * Number(i.quantidade || 1), 0);
     let itensCompra = itensCarrinho
       .map(i => ({ nome: i.nome, qtd: Number(i.quantidade || 1), preco: Number(i.preco || 0) }))
@@ -2021,7 +2025,7 @@
       total: Math.round(total * 100) / 100, itens: itensCompra,
       ids: itensCarrinho.map(i => String(i.id))
     });
-    if (mostrarConvitePro) abrirPaywall('compraFinalizada');
+    if (mostrarConvitePro) abrirPro(true);
     else toast('Compra finalizada!', 'ok');
   }
 
