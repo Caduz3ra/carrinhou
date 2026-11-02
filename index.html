@@ -968,7 +968,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.6</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.7</div>
   </div>
 </div>
 
@@ -2015,7 +2015,11 @@
     let dt = Math.max(1, agora - swipe.ultT);
     swipe.vx = 0.8 * ((e.clientX - swipe.ultX) / dt) + 0.2 * swipe.vx;   // velocidade suavizada (px/ms)
     swipe.ultX = e.clientX; swipe.ultT = agora;
-    swipe.x = elastico(swipe.base + dx);
+    let x = elastico(swipe.base + dx);
+    // Item já aberto: arrastar para o outro lado só fecha (para no centro, não passa para o outro lado)
+    if (swipe.base > 0) x = Math.max(0, x);
+    if (swipe.base < 0) x = Math.min(0, x);
+    swipe.x = x;
     if (!swipe.raf) {
       swipe.raf = requestAnimationFrame(() => {               // 1 desenho por quadro
         if (swipe.el) { desenharSwipe(swipe.el, swipe.x); swipe.raf = 0; }
@@ -2032,7 +2036,9 @@
       ignorarClique = true;
       setTimeout(() => { ignorarClique = false; }, 60);
       let pos;
-      if (s0.vx > 0.45) pos = s0.x < 0 ? 0 : SWIPE_ESTRELA;          // movimento rápido para a direita
+      if (s0.base > 0) pos = (s0.vx < -0.45 || s0.x < SWIPE_ESTRELA / 2) ? 0 : SWIPE_ESTRELA;   // estava aberto à direita
+      else if (s0.base < 0) pos = (s0.vx > 0.45 || s0.x > SWIPE_ACOES / 2) ? 0 : SWIPE_ACOES;   // estava aberto à esquerda
+      else if (s0.vx > 0.45) pos = s0.x < 0 ? 0 : SWIPE_ESTRELA;     // movimento rápido para a direita
       else if (s0.vx < -0.45) pos = s0.x > 0 ? 0 : SWIPE_ACOES;      // movimento rápido para a esquerda
       else pos = s0.x > SWIPE_ESTRELA / 2 ? SWIPE_ESTRELA : s0.x < SWIPE_ACOES / 2 ? SWIPE_ACOES : 0;
       posicionarSwipe(s0.el, pos);
@@ -2051,14 +2057,18 @@
       let card = el.querySelector('.item-card');
       el.style.setProperty('--p', 1);
       el.classList.add('mostra-esq');
+      // Mais devagar, com pequenas pausas abertas para dar tempo de ver os botões
+      const DURACAO = 3400;
       let anim = card.animate([
-        { transform: 'translate3d(0,0,0)', offset: 0 },
-        { transform: 'translate3d(64px,0,0)', offset: 0.22 },
-        { transform: 'translate3d(0,0,0)', offset: 0.42 },
-        { transform: 'translate3d(-72px,0,0)', offset: 0.68 },
+        { transform: 'translate3d(0,0,0)', offset: 0, easing: 'ease-in-out' },
+        { transform: 'translate3d(64px,0,0)', offset: 0.18 },
+        { transform: 'translate3d(64px,0,0)', offset: 0.30, easing: 'ease-in-out' },
+        { transform: 'translate3d(0,0,0)', offset: 0.46, easing: 'ease-in-out' },
+        { transform: 'translate3d(-72px,0,0)', offset: 0.64 },
+        { transform: 'translate3d(-72px,0,0)', offset: 0.78, easing: 'ease-in-out' },
         { transform: 'translate3d(0,0,0)', offset: 1 }
-      ], { duration: 1700, easing: 'ease-in-out' });
-      setTimeout(() => { el.classList.remove('mostra-esq'); el.classList.add('mostra-dir'); }, 1700 * 0.42);
+      ], { duration: DURACAO });
+      setTimeout(() => { el.classList.remove('mostra-esq'); el.classList.add('mostra-dir'); }, DURACAO * 0.46);
       anim.onfinish = anim.oncancel = () => {
         el.classList.remove('mostra-esq', 'mostra-dir');
         el.style.setProperty('--p', 0);
