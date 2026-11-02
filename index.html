@@ -253,10 +253,17 @@
     }
     .estrela-btn:active { transform: scale(0.85); }
     .estrela-btn svg { width: 16px; height: 16px; stroke-width: 1.8; }
-    .estrela-btn.on { color: var(--warn); }
+    /* Estrela temporária: amarelo suave · permanente: dourado forte com brilho */
+    .estrela-btn.on { color: #fcd34d; opacity: .8; }
     .estrela-btn.on svg { fill: currentColor; }
+    .estrela-btn.on.perm { color: #facc15; opacity: 1; filter: drop-shadow(0 0 4px rgba(250, 204, 21, .55)); }
     .estrela-btn.fixa { cursor: default; }
-    .item-card.estrela, .item-card.estrela:hover { border-color: var(--warn); }
+    .item-card.estrela, .item-card.estrela:hover { border-color: rgba(251, 191, 36, 0.45); }
+    .item-card.estrela.perm, .item-card.estrela.perm:hover {
+      border-color: #facc15;
+      background: linear-gradient(135deg, rgba(250, 204, 21, 0.10), var(--surface-2) 65%);
+      box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.25), 0 0 16px rgba(250, 204, 21, 0.10);
+    }
     #btnFiltroEstrela svg { width: 18px; height: 18px; }
     #btnFiltroEstrela.on { background: var(--warn-soft); color: var(--warn); border-color: rgba(251,191,36,.45); }
     #btnFiltroEstrela.on svg { fill: currentColor; }
@@ -455,6 +462,43 @@
     .box-senha { display: none; padding: 4px 2px 8px; }
     .box-senha.aberto { display: block; animation: entrar .2s ease; }
     .carregar-mais { grid-column: 1 / -1; margin-top: 4px; }
+
+    /* Escolha do tipo de estrela */
+    .opcao-estrela {
+      width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; padding: 14px; margin-bottom: 10px;
+      border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    }
+    .opcao-estrela:active { transform: scale(0.99); }
+    .opcao-estrela .ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; }
+    .opcao-estrela .ic svg { width: 22px; height: 22px; fill: currentColor; }
+    .opcao-estrela.temp .ic { background: rgba(252, 211, 77, 0.12); color: #fcd34d; }
+    .opcao-estrela.perm { border-color: rgba(250, 204, 21, 0.45); }
+    .opcao-estrela.perm .ic { background: rgba(250, 204, 21, 0.18); color: #facc15; filter: drop-shadow(0 0 6px rgba(250, 204, 21, .4)); }
+    .opcao-estrela .txt { flex: 1; min-width: 0; }
+    .opcao-estrela b { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+    .opcao-estrela small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 3px; line-height: 1.4; }
+    .subtitulo-modal { color: var(--muted); font-size: 14px; margin: -10px 0 16px; }
+
+    /* Finalizar: mercado */
+    .resumo-final { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 16px;
+      border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+    .resumo-final b { color: var(--text); font-size: 18px; }
+    .chips-mercado { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 16px; }
+    .chips-mercado:empty { display: none; }
+    .chip-mercado { display: inline-flex; align-items: center; border-radius: 999px; background: var(--surface-3); border: 1px solid var(--border-2); overflow: hidden; }
+    .chip-mercado button { background: none; border: none; color: var(--text); font-size: 13px; font-weight: 600; padding: 7px 4px 7px 12px; }
+    .chip-mercado button.x { color: var(--faint); padding: 7px 10px 7px 6px; font-size: 15px; line-height: 1; }
+    .chip-mercado.sel { border-color: var(--accent); background: var(--accent-soft); }
+    .hist-mercado { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .hist-mercado svg { width: 14px; height: 14px; }
+
+    /* Admin */
+    .admin-box { margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; border: 1px dashed rgba(96, 165, 250, 0.45); background: rgba(96, 165, 250, 0.08); }
+    .admin-titulo { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #60a5fa; margin-bottom: 8px; }
+    .seg { display: flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+    .seg button { flex: 1; height: 36px; border-radius: 8px; background: none; border: none; color: var(--muted); font-weight: 700; font-size: 14px; }
+    .seg button.ativo { background: var(--surface-3); color: var(--text); }
+    .seg button.ativo.pro { color: var(--ouro); }
 
     /* ---------- Plano Pro ---------- */
     :root { --ouro: #fbbf24; --ouro-2: #f59e0b; --ouro-ink: #2a1a02; --ouro-soft: rgba(251, 191, 36, 0.12); }
@@ -793,6 +837,7 @@
       <tbody>
         <tr><td>Lista, carrinho e uso offline</td><td>✓</td><td class="col-pro">✓</td></tr>
         <tr><td>Itens com estrela</td><td>3</td><td class="col-pro">Ilimitados</td></tr>
+        <tr><td>Estrela permanente</td><td>—</td><td class="col-pro">✓</td></tr>
         <tr><td>Histórico de compras</td><td>Última compra</td><td class="col-pro">Completo</td></tr>
         <tr><td>Último preço dos produtos</td><td>3 itens</td><td class="col-pro">Todos</td></tr>
       </tbody>
@@ -828,6 +873,41 @@
   </div>
 </div>
 
+<!-- Modal tipo de estrela -->
+<div class="modal" id="modalEstrela" onclick="if(event.target===this)fecharModal('modalEstrela')">
+  <div class="modal-content">
+    <h3>Marcar com estrela</h3>
+    <p class="subtitulo-modal" id="estrelaItemNome"></p>
+    <button class="opcao-estrela temp" onclick="escolherEstrela(false)">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg></span>
+      <span class="txt"><b>Temporária</b><small>Some quando você finalizar a compra.</small></span>
+    </button>
+    <button class="opcao-estrela perm" onclick="escolherEstrela(true)">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg></span>
+      <span class="txt"><b>Permanente <span class="tag-pro" id="tagProEstrela">PRO</span></b><small>Continua marcada depois de finalizar. Ideal para o que você compra sempre.</small></span>
+    </button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalEstrela')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal finalizar compra (mercado) -->
+<div class="modal" id="modalFinalizar" onclick="if(event.target===this)fecharModal('modalFinalizar')">
+  <div class="modal-content">
+    <h3>Finalizar compra</h3>
+    <div class="resumo-final" id="finalResumo"></div>
+    <div class="field">
+      <label>Mercado (opcional)</label>
+      <input class="input" type="text" id="finalMercado" placeholder="Ex.: Atacadão" autocomplete="off" maxlength="60" oninput="renderChipsMercado()">
+    </div>
+    <div class="chips-mercado" id="chipsMercado"></div>
+    <button class="btn btn-success" onclick="confirmarFinalizar()">
+      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+      Finalizar compra
+    </button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalFinalizar')">Cancelar</button>
+  </div>
+</div>
+
 <!-- Modal Minha conta -->
 <div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
   <div class="modal-content">
@@ -853,6 +933,13 @@
       <span class="txt"><b id="opcaoPlanoTxt">Conhecer o Pro</b><small id="opcaoPlanoSub">Estrelas ilimitadas, histórico completo e preços</small></span>
       <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
+    <div class="admin-box" id="adminBox" style="display:none">
+      <div class="admin-titulo">ADMIN · PLANO DA SUA CONTA (TESTES)</div>
+      <div class="seg">
+        <button type="button" id="admFree" onclick="adminPlano('free')">Free</button>
+        <button type="button" id="admPro" class="pro" onclick="adminPlano('pro')">Pro</button>
+      </div>
+    </div>
     <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
       Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
@@ -881,7 +968,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.5</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.6</div>
   </div>
 </div>
 
@@ -932,6 +1019,7 @@
     hist: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     lista: '<svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
     bag: '<svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>',
+    loja: '<svg viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/></svg>',
     lapis: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
     estrela: '<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg>',
     tag: '<svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1"/></svg>'
@@ -1036,7 +1124,11 @@
         break;
       case 'upd': {
         let it = d.itens.find(i => String(i.id) === String(op.id));
-        if (it) Object.assign(it, op.c);
+        if (it) {
+          Object.assign(it, op.c);
+          if (op.c.estrela === false) it.estrela_fixa = false;
+          if (op.c.estrela_fixa && !ehPro(d)) it.estrela_fixa = false;   // permanente só no Pro
+        }
         break;
       }
       case 'del':
@@ -1044,7 +1136,10 @@
         break;
       case 'fin':
         if (!d.historico.some(h => String(h.id) === String(op.id))) {
-          let compra = { id: op.id, data: op.data, total: op.total, itens: op.itens || [] };
+          let compra = { id: op.id, data: op.data, total: op.total, mercado: op.mercado || null, itens: op.itens || [] };
+          if (op.mercado) {
+            d.mercados = [op.mercado].concat((d.mercados || []).filter(m => m.toLowerCase() !== op.mercado.toLowerCase()));
+          }
           if (ehPro(d)) {
             d.historico.push(compra);
             d.historicoTotal = (d.historicoTotal || 0) + 1;
@@ -1057,8 +1152,12 @@
         }
         d.itens.forEach(i => {
           if (op.ids.includes(String(i.id))) { i.status = 'Pendente'; i.quantidade = 1; }
-          i.estrela = false; // finalizou: remove todas as estrelas
+          // finalizou: remove as estrelas temporárias (as permanentes do Pro ficam)
+          if (!(i.estrela_fixa && ehPro(d))) { i.estrela = false; i.estrela_fixa = false; }
         });
+        break;
+      case 'delMercado':
+        d.mercados = (d.mercados || []).filter(m => m.toLowerCase() !== String(op.nome).toLowerCase());
         break;
       case 'delHist': {
         let antes = d.historico.length;
@@ -1371,6 +1470,8 @@
     const textos = {
       estrela: ['Limite de estrelas do plano Free',
                 `No plano Free você pode marcar até <b>${LIMITE_FREE} itens</b> com estrela.<br>Assine o <b>Pro</b> para marcar quantos quiser.`],
+      estrelaFixa: ['Estrela permanente é Pro',
+                'Com a <b>estrela permanente</b>, o item continua marcado depois de finalizar a compra. Ideal para o que você compra sempre.<br>Disponível no <b>Pro</b>.'],
       preco:   ['Veja o último preço de tudo',
                 `No plano Free, o último preço aparece em <b>${LIMITE_FREE} itens</b> da sua última compra.<br>Com o <b>Pro</b>, você vê o preço de todos os produtos.`],
       historico: ['Histórico completo no Pro',
@@ -1420,6 +1521,24 @@
     toast('Pagamento disponível em breve!', '');   // Fase 5: Mercado Pago
   }
 
+  // Admin: troca o plano da própria conta (para testes)
+  async function adminPlano(novo) {
+    if (!navigator.onLine) { toast('Sem internet.', 'erro'); return; }
+    try {
+      await rpc('admin_trocar_plano', { novo: novo });
+      dadosGlobais.perfil = Object.assign({}, dadosGlobais.perfil, { plano: novo, pro_ate: null });
+      dadosGlobais.cursor = null;          // baixa tudo com as regras do novo plano
+      salvarLocal();
+      atualizarConta();
+      renderizar();
+      sincronizarAgora();
+      toast(novo === 'pro' ? 'Sua conta agora é Pro' : 'Sua conta agora é Free', 'ok');
+    } catch (e) {
+      if (e.semSessao) { encerrarSessao(false, 'Sua sessão expirou. Entre novamente.'); return; }
+      toast(e.message || 'Não foi possível trocar o plano.', 'erro');
+    }
+  }
+
   function atualizarPlanoNaTela() {
     let pro = ehPro();
     document.getElementById('opcaoPlanoTxt').innerText = pro ? 'Meu plano Pro' : 'Conhecer o Pro';
@@ -1436,6 +1555,9 @@
     document.getElementById('perfilNomeTxt').innerText = nome;
     document.getElementById('perfilEmailTxt').innerText = email;
     let pro = ehPro();
+    document.getElementById('adminBox').style.display = p.admin ? 'block' : 'none';
+    document.getElementById('admFree').classList.toggle('ativo', !pro);
+    document.getElementById('admPro').classList.toggle('ativo', pro);
     let tag = document.getElementById('perfilPlano');
     tag.innerText = pro ? 'Pro' : 'Free';
     tag.classList.toggle('pro', pro);
@@ -1560,7 +1682,8 @@
     if (d.completo) {
       dadosGlobais = {
         itens: d.itens || [], historico: d.historico || [],
-        ultimosPrecos: d.ultimos_precos || [], historicoTotal: d.historico_total || 0
+        ultimosPrecos: d.ultimos_precos || [], historicoTotal: d.historico_total || 0,
+        mercados: d.mercados || []
       };
     } else {
       let porId = new Map((dadosGlobais.itens || []).map(i => [String(i.id), i]));
@@ -1580,6 +1703,7 @@
       if (d.ultimos_precos) dadosGlobais.ultimosPrecos = d.ultimos_precos;
       dadosGlobais.historicoTotal = d.historico_total || 0;
     }
+    if (d.mercados) dadosGlobais.mercados = d.mercados;
     dadosGlobais.perfil = d.perfil || dadosGlobais.perfil || null;
     dadosGlobais.cursor = d.agora;
     // Plano mudou (virou Pro ou venceu): baixa tudo de novo com as regras do novo plano
@@ -1916,6 +2040,32 @@
     if (renderAdiado) { renderAdiado = false; renderizar(); }
   }
 
+  // Ao abrir o app: o 1º item balança para a direita e para a esquerda (mostra que dá para arrastar)
+  let dicaArrastarFeita = false;
+  function agendarDicaArrastar() {
+    dicaArrastarFeita = true;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setTimeout(() => {
+      let el = document.querySelector('#listaPendentes .swipe');
+      if (!el || swipe.el || swipeAberto || mostrandoHistorico) return;
+      let card = el.querySelector('.item-card');
+      el.style.setProperty('--p', 1);
+      el.classList.add('mostra-esq');
+      let anim = card.animate([
+        { transform: 'translate3d(0,0,0)', offset: 0 },
+        { transform: 'translate3d(64px,0,0)', offset: 0.22 },
+        { transform: 'translate3d(0,0,0)', offset: 0.42 },
+        { transform: 'translate3d(-72px,0,0)', offset: 0.68 },
+        { transform: 'translate3d(0,0,0)', offset: 1 }
+      ], { duration: 1700, easing: 'ease-in-out' });
+      setTimeout(() => { el.classList.remove('mostra-esq'); el.classList.add('mostra-dir'); }, 1700 * 0.42);
+      anim.onfinish = anim.oncancel = () => {
+        el.classList.remove('mostra-esq', 'mostra-dir');
+        el.style.setProperty('--p', 0);
+      };
+    }, 900);
+  }
+
   // Toque no item: se houver ações abertas, só fecha; senão abre os detalhes
   function cliqueItem(id) {
     if (ignorarClique) return;
@@ -1939,8 +2089,26 @@
       abrirPaywall('estrela');
       return;
     }
-    executar({ t: 'upd', id: id, c: { estrela: !it.estrela } });
-    toast(it.estrela ? 'Estrela adicionada' : 'Estrela removida', 'ok');
+    if (it.estrela) {
+      executar({ t: 'upd', id: id, c: { estrela: false, estrela_fixa: false } });
+      toast('Estrela removida', 'ok');
+      return;
+    }
+    // Nova estrela: pergunta se é temporária ou permanente
+    itemEstrela = id;
+    document.getElementById('estrelaItemNome').innerText = it.nome;
+    document.getElementById('tagProEstrela').style.display = ehPro() ? 'none' : 'inline';
+    document.getElementById('modalEstrela').style.display = 'flex';
+  }
+
+  let itemEstrela = null;
+  function escolherEstrela(permanente) {
+    fecharModal('modalEstrela');
+    let id = itemEstrela;
+    if (!acharItem(id)) return;
+    if (permanente && !ehPro()) { abrirPaywall('estrelaFixa'); return; }
+    executar({ t: 'upd', id: id, c: { estrela: true, estrela_fixa: !!permanente } });
+    toast(permanente ? 'Estrela permanente adicionada' : 'Estrela adicionada', 'ok');
   }
   function acaoRenomear(id) {
     let it = acharItem(id);
@@ -2023,12 +2191,49 @@
     executar({ t: 'upd', id: id, c: { nome: novoNome } });
   }
 
+  // Botão "Finalizar compra": abre a janela para informar o mercado
   function finalizar() {
     let itensCarrinho = dadosGlobais.itens.filter(i => i.status === 'Carrinho');
     if (itensCarrinho.length === 0) {
       toast('O carrinho está vazio!', 'erro');
       return;
     }
+    let total = itensCarrinho.reduce((acc, i) => acc + Number(i.preco || 0) * Number(i.quantidade || 1), 0);
+    document.getElementById('finalResumo').innerHTML =
+      `<span>${itensCarrinho.length} ${itensCarrinho.length > 1 ? 'itens' : 'item'}</span><b>${moeda(total)}</b>`;
+    document.getElementById('finalMercado').value = '';
+    renderChipsMercado();
+    document.getElementById('modalFinalizar').style.display = 'flex';
+  }
+
+  function renderChipsMercado() {
+    let digitado = document.getElementById('finalMercado').value.trim().toLowerCase();
+    let lista = (dadosGlobais.mercados || [])
+      .filter(m => !digitado || m.toLowerCase().includes(digitado))
+      .slice(0, 8);
+    document.getElementById('chipsMercado').innerHTML = lista.map(m => `
+      <span class="chip-mercado${m.toLowerCase() === digitado ? ' sel' : ''}">
+        <button type="button" onclick="usarMercado(this.dataset.m)" data-m="${esc(m)}">${esc(m)}</button>
+        <button type="button" class="x" title="Remover da lista" onclick="removerMercado(this.dataset.m)" data-m="${esc(m)}">×</button>
+      </span>`).join('');
+  }
+  function usarMercado(nome) {
+    document.getElementById('finalMercado').value = nome;
+    renderChipsMercado();
+  }
+  function removerMercado(nome) {
+    executar({ t: 'delMercado', nome: nome });
+    renderChipsMercado();
+  }
+
+  function confirmarFinalizar() {
+    fecharModal('modalFinalizar');
+    let itensCarrinho = dadosGlobais.itens.filter(i => i.status === 'Carrinho');
+    if (itensCarrinho.length === 0) return;
+    let mercado = document.getElementById('finalMercado').value.trim().replace(/\s+/g, ' ');
+    // usa a grafia já salva (ex.: "atacadão" -> "Atacadão")
+    let existente = (dadosGlobais.mercados || []).find(m => m.toLowerCase() === mercado.toLowerCase());
+    if (existente) mercado = existente;
     // Free: depois de finalizar, sempre mostra o convite para o Pro
     let mostrarConvitePro = !ehPro();
     let total = itensCarrinho.reduce((acc, i) => acc + Number(i.preco || 0) * Number(i.quantidade || 1), 0);
@@ -2038,7 +2243,7 @@
 
     if (carrinhoExpandido) toggleCarrinho();
     executar({
-      t: 'fin', id: novoId(), data: new Date().toISOString(),
+      t: 'fin', id: novoId(), data: new Date().toISOString(), mercado: mercado || null,
       total: Math.round(total * 100) / 100, itens: itensCompra,
       ids: itensCarrinho.map(i => String(i.id))
     });
@@ -2206,10 +2411,10 @@
               <button class="swipe-btn editar" onclick="acaoRenomear('${id}')">${ICON.lapis}<span>Renomear</span></button>
               <button class="swipe-btn excluir" onclick="acaoExcluir('${id}')">${ICON.lixo}<span>Excluir</span></button>
             </div>
-            <div class="item-card${i.estrela ? ' estrela' : ''}" onclick="cliqueItem('${id}')">
+            <div class="item-card${i.estrela ? ' estrela' : ''}${i.estrela && i.estrela_fixa ? ' perm' : ''}" onclick="cliqueItem('${id}')">
               <div class="item-info">
                 <div class="item-nome">
-                  ${i.estrela ? `<span class="estrela-btn on fixa">${ICON.estrela}</span>` : ''}
+                  ${i.estrela ? `<span class="estrela-btn on fixa${i.estrela_fixa ? ' perm' : ''}" title="${i.estrela_fixa ? 'Estrela permanente' : 'Estrela temporária'}">${ICON.estrela}</span>` : ''}
                   <span class="nome-txt">${esc(i.nome)}</span>
                 </div>
                 <div class="item-meta">
@@ -2225,6 +2430,7 @@
     }
 
     animarPosicoes(pendentesDiv, posPend);
+    if (carregado && pendentes.length && !dicaArrastarFeita) agendarDicaArrastar();
 
     // Carrinho
     let total = 0;
@@ -2241,7 +2447,7 @@
           <div class="item-card${i.estrela ? ' estrela' : ''}" data-id="${esc(i.id)}" onclick="abrirDetalhes('${esc(i.id)}', true)">
             <div class="item-info">
               <div class="item-nome">
-                ${i.estrela ? `<span class="estrela-btn on fixa">${ICON.estrela}</span>` : ''}
+                ${i.estrela ? `<span class="estrela-btn on fixa${i.estrela_fixa ? ' perm' : ''}">${ICON.estrela}</span>` : ''}
                 <span class="nome-txt">${esc(i.nome)}</span>
               </div>
               <div class="item-meta">
@@ -2282,6 +2488,7 @@
               <span class="hist-data">${ICON.cal} ${esc(formatarData(h.data))}</span>
               <span class="hist-total">${moeda(h.total)}</span>
             </div>
+            ${h.mercado ? `<div class="hist-mercado">${ICON.loja} ${esc(h.mercado)}</div>` : ''}
             <div class="hist-sub">
               <span>${itensH.length} produto(s) · ${qtdTotal} unidade(s)</span>
               <span class="chev-h"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
