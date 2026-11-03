@@ -254,13 +254,11 @@
     .link-obs:active { color: var(--text); }
     .campo-obs { display: none; margin-bottom: 16px; }
     .campo-obs.aberto { display: block; animation: entrar .2s ease; }
-    .campo-obs textarea {
-      width: 100%; min-height: 64px; resize: vertical; padding: 10px 12px; border-radius: 12px; font-family: inherit; font-size: 15px;
-      background: var(--surface-2); border: 1px solid var(--border); color: var(--text); outline: none;
-    }
-    .campo-obs textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-    .campo-obs .linha-obs { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-    .campo-obs .contador { font-size: 11px; color: var(--faint); }
+    .obs-linha { display: flex; gap: 8px; }
+    .obs-input { height: 48px; }
+    .btn-salvar-obs { width: 48px; height: 48px; color: var(--muted); }
+    .btn-salvar-obs svg { width: 20px; height: 20px; }
+    .btn-salvar-obs.alterado { color: var(--accent); border-color: rgba(45, 212, 191, 0.45); }
 
     /* Estrela */
     .estrela-btn {
@@ -780,10 +778,16 @@
     <div class="campo-obs" id="campoObs">
       <div class="field" style="margin-bottom:0">
         <label>Observação</label>
-        <textarea id="detalheObs" maxlength="200" placeholder="Ex.: marca X, pacote de 1 kg, sem lactose..." oninput="contarObs()"></textarea>
-        <div class="linha-obs">
-          <button type="button" class="btn-mini btn-ghost" onclick="salvarSoObs()">Salvar observação</button>
-          <span class="contador" id="contadorObs">0/200</span>
+        <div class="obs-linha">
+          <div class="search obs-input" id="obsCaixa">
+            <input type="text" id="detalheObs" maxlength="50" placeholder="Ex.: marca X, 1 kg, sem lactose" autocomplete="off" oninput="contarObs()">
+            <button type="button" class="limpar-busca" onclick="limparObs()" aria-label="Apagar observação" title="Apagar observação">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none" opacity=".35"/><path d="m15 9-6 6M9 9l6 6" stroke="var(--surface-2)" stroke-width="2.4"/></svg>
+            </button>
+          </div>
+          <button type="button" class="icon-btn btn-salvar-obs" onclick="salvarSoObs()" aria-label="Salvar observação" title="Salvar observação">
+            <svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M7 3v5h8V3"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -1018,7 +1022,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.10</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.11</div>
   </div>
 </div>
 
@@ -2065,15 +2069,25 @@
     let id = document.getElementById('detalheId').value;
     let it = acharItem(id);
     if (!it) return;
-    let obs = document.getElementById('detalheObs').value.trim().replace(/\s+/g, ' ').slice(0, 200);
+    let obs = document.getElementById('detalheObs').value.trim().replace(/\s+/g, ' ').slice(0, 50);
     fecharModal('modalDetalhes');
     if (obs === (it.obs || '')) return;
     executar({ t: 'upd', id: id, c: { obs: obs || null } });
     toast(obs ? 'Observação salva' : 'Observação removida', 'ok');
   }
 
+  // Mostra o X quando há texto e destaca o disquete quando a observação foi alterada
   function contarObs() {
-    document.getElementById('contadorObs').innerText = document.getElementById('detalheObs').value.length + '/200';
+    let campo = document.getElementById('detalheObs');
+    let it = acharItem(document.getElementById('detalheId').value) || {};
+    document.getElementById('obsCaixa').classList.toggle('tem-texto', !!campo.value);
+    document.querySelector('.btn-salvar-obs').classList.toggle('alterado', campo.value.trim() !== (it.obs || ''));
+  }
+  function limparObs() {
+    let campo = document.getElementById('detalheObs');
+    campo.value = '';
+    contarObs();
+    campo.focus();
   }
 
   function abrirRenomear(id, nomeAtual) {
@@ -2319,7 +2333,7 @@
     let jaNoCarrinho = (acharItem(id) || {}).status === 'Carrinho';
     fecharModal('modalDetalhes');
     if (!jaNoCarrinho) document.getElementById('pesquisaPendente').value = ''; // limpa a busca após adicionar
-    let obs = document.getElementById('detalheObs').value.trim().replace(/\s+/g, ' ').slice(0, 200);
+    let obs = document.getElementById('detalheObs').value.trim().replace(/\s+/g, ' ').slice(0, 50);
     let c = { preco: preco, quantidade: qtd, status: 'Carrinho' };
     if (obs !== ((acharItem(id) || {}).obs || '')) c.obs = obs || null;   // só envia se mudou
     executar({ t: 'upd', id: id, c: c });
