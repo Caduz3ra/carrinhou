@@ -425,6 +425,12 @@
     .auth-tabs button { flex: 1; height: 40px; border-radius: 9px; background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
     .auth-tabs button.ativo { background: var(--surface-3); color: var(--text); }
     .btn:disabled { opacity: .6; cursor: wait; }
+    /* Redefinir senha (vindo do link do e-mail): obrigatório, sem acesso ao app antes */
+    #painelRedefinir { display: none; }
+    #telaLogin.redefinindo .panel { display: none; }
+    #telaLogin.redefinindo #painelRedefinir { display: block; }
+    #painelRedefinir h3 { margin: 0 0 6px; font-size: 18px; }
+    #painelRedefinir .paywall-texto { margin-bottom: 16px; }
     .auth-aviso { display: none; text-align: center; padding: 6px 4px 2px; }
     .auth-aviso .icone { width: 56px; height: 56px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
     .auth-aviso .icone svg { width: 26px; height: 26px; }
@@ -820,6 +826,23 @@
         <button type="button" class="btn-link" onclick="fecharAviso(true)">Usar outro e-mail</button>
       </div>
     </div>
+    <div class="panel" id="painelRedefinir">
+      <h3>Crie uma nova senha</h3>
+      <p class="paywall-texto" id="redefinirTexto">Para continuar, defina uma nova senha.</p>
+      <form onsubmit="event.preventDefault(); salvarRedefinicao();">
+        <div class="field">
+          <label>Nova senha</label>
+          <input class="input" type="password" id="redefSenha" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="field">
+          <label>Confirmar nova senha</label>
+          <input class="input" type="password" id="redefSenha2" autocomplete="new-password">
+        </div>
+        <div class="cfg-msg" id="redefMsg"></div>
+        <button class="btn btn-primary" type="submit" id="btnRedef">Salvar nova senha</button>
+      </form>
+      <button type="button" class="btn-link" onclick="cancelarRedefinicao()">Cancelar e sair</button>
+    </div>
   </div>
 </div>
 
@@ -968,7 +991,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.7</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.8</div>
   </div>
 </div>
 
@@ -1038,6 +1061,11 @@
 
     sessao = lsGet(LS_SESSAO, null);
     let retorno = lerRetornoDoEmail();   // link de confirmação de cadastro / recuperação de senha
+    // Veio do link "Criar nova senha" (ou fechou o app sem terminar): obriga a nova senha antes de entrar
+    if (sessao && sessao.user && ((retorno && retorno.tipo === 'recovery') || lsGet(LS_REDEFINIR, false))) {
+      exigirNovaSenha();
+      return;
+    }
     if (!sessao || !sessao.user) {
       mostrarLogin();
       tratarRetorno(retorno);
@@ -1053,7 +1081,7 @@
     if (r.erro) {
       if (!sessao) authMensagem(r.erro, true); else toast(r.erro, 'erro');
     } else if (r.tipo === 'recovery') {
-      abrirNovaSenha();
+      exigirNovaSenha();
     } else if (r.tipo === 'signup') {
       if (sessao) { toast('E-mail confirmado!', 'ok'); return; }
       modoAuth('entrar');
@@ -1087,7 +1115,6 @@
   window.addEventListener('hashchange', () => {
     let retorno = lerRetornoDoEmail();
     if (!retorno) return;
-    if (retorno.tipo === 'recovery' && sessao) iniciarApp();
     tratarRetorno(retorno);
   });
 
@@ -1427,6 +1454,57 @@
     }
   }
 
+  // ---------- Redefinir senha (obrigatório) ----------
+  const LS_REDEFINIR = 'carrinhou_redefinir_senha';
+
+  function exigirNovaSenha() {
+    lsSet(LS_REDEFINIR, true);
+    clearTimeout(timerSync);
+    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    let tela = document.getElementById('telaLogin');
+    tela.classList.add('visivel', 'redefinindo');
+    let email = sessao && sessao.user ? sessao.user.email : '';
+    document.getElementById('redefinirTexto').innerHTML =
+      `Para continuar, defina uma nova senha${email ? ` para <b>${esc(email)}</b>` : ''}.`;
+    ['redefSenha', 'redefSenha2'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('redefMsg').innerText = '';
+    setTimeout(() => document.getElementById('redefSenha').focus(), 120);
+  }
+
+  function msgRedef(t, tipo) {
+    let m = document.getElementById('redefMsg');
+    m.innerText = t || '';
+    m.className = 'cfg-msg' + (tipo ? ' ' + tipo : '');
+  }
+
+  async function salvarRedefinicao() {
+    let s1 = document.getElementById('redefSenha').value;
+    let s2 = document.getElementById('redefSenha2').value;
+    if (s1.length < 6) return msgRedef('A senha deve ter pelo menos 6 caracteres.', 'erro');
+    if (s1 !== s2) return msgRedef('A confirmação não confere com a nova senha.', 'erro');
+    if (!navigator.onLine) return msgRedef('Sem internet. Conecte-se para continuar.', 'erro');
+    let btn = document.getElementById('btnRedef');
+    btn.disabled = true;
+    msgRedef('Salvando...');
+    try {
+      await authFetch('user', { password: s1 }, 'PUT', await tokenValido());
+      try { localStorage.removeItem(LS_REDEFINIR); } catch (e) {}
+      document.getElementById('telaLogin').classList.remove('redefinindo');
+      iniciarApp();
+      toast('Senha alterada!', 'ok');
+    } catch (e) {
+      msgRedef(e.semSessao ? 'Link expirado. Volte ao login e peça um novo link.' : (e.message || 'Erro ao salvar.'), 'erro');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function cancelarRedefinicao() {
+    try { localStorage.removeItem(LS_REDEFINIR); } catch (e) {}
+    document.getElementById('telaLogin').classList.remove('redefinindo');
+    encerrarSessao(true);
+  }
+
   async function sair() {
     let msg = fila.length
       ? `Há ${fila.length} alteração(ões) salvas só neste aparelho, ainda não enviadas à nuvem. Se sair agora, elas serão perdidas. Sair mesmo assim?`
@@ -1452,6 +1530,8 @@
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     authModo = 'entrar';
     document.querySelector('#telaLogin .panel').classList.remove('mostrando-aviso');
+    document.getElementById('telaLogin').classList.remove('redefinindo');
+    try { localStorage.removeItem(LS_REDEFINIR); } catch (e) {}
     mostrarLogin(msg, !!msg);
   }
 
