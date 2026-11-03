@@ -259,7 +259,8 @@
       background: var(--surface-2); border: 1px solid var(--border); color: var(--text); outline: none;
     }
     .campo-obs textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-    .campo-obs .contador { text-align: right; font-size: 11px; color: var(--faint); margin-top: 4px; }
+    .campo-obs .linha-obs { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .campo-obs .contador { font-size: 11px; color: var(--faint); }
 
     /* Estrela */
     .estrela-btn {
@@ -780,7 +781,10 @@
       <div class="field" style="margin-bottom:0">
         <label>Observação</label>
         <textarea id="detalheObs" maxlength="200" placeholder="Ex.: marca X, pacote de 1 kg, sem lactose..." oninput="contarObs()"></textarea>
-        <div class="contador" id="contadorObs">0/200</div>
+        <div class="linha-obs">
+          <button type="button" class="btn-mini btn-ghost" onclick="salvarSoObs()">Salvar observação</button>
+          <span class="contador" id="contadorObs">0/200</span>
+        </div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="adicionarAoCarrinhoDoModal()">
@@ -1014,7 +1018,7 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.9</div>
+    <div class="perfil-rodape">Carrinhou · versão 3.10</div>
   </div>
 </div>
 
@@ -2056,6 +2060,18 @@
     document.getElementById('campoObs').classList.add('aberto');
     setTimeout(() => document.getElementById('detalheObs').focus(), 60);
   }
+  // Salva só a observação (sem colocar no carrinho nem mudar preço/quantidade)
+  function salvarSoObs() {
+    let id = document.getElementById('detalheId').value;
+    let it = acharItem(id);
+    if (!it) return;
+    let obs = document.getElementById('detalheObs').value.trim().replace(/\s+/g, ' ').slice(0, 200);
+    fecharModal('modalDetalhes');
+    if (obs === (it.obs || '')) return;
+    executar({ t: 'upd', id: id, c: { obs: obs || null } });
+    toast(obs ? 'Observação salva' : 'Observação removida', 'ok');
+  }
+
   function contarObs() {
     document.getElementById('contadorObs').innerText = document.getElementById('detalheObs').value.length + '/200';
   }
