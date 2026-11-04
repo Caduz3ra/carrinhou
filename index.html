@@ -593,6 +593,11 @@
     .hist-bloqueio .pro-icone svg { width: 16px; height: 16px; }
     .hist-bloqueio .txt { flex: 1; }
     .hist-bloqueio b { color: var(--ouro); }
+    .link-excluir-conta { display: block; margin: 14px auto 0; background: none; border: none; color: var(--danger); opacity: .75; font-size: 13px; font-weight: 600; padding: 6px; }
+    .link-privacidade { color: var(--muted); }
+    .lista-exclusao { margin: 0 0 16px; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .rodape-login { text-align: center; margin-top: 18px; font-size: 12px; }
+    .rodape-login a { color: var(--faint); }
     .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -847,6 +852,7 @@
         <button class="btn btn-primary" type="submit" id="btnAuth">Entrar</button>
       </form>
       <button type="button" class="btn-link" id="linkEsqueci" onclick="modoAuth(authModo === 'recuperar' ? 'entrar' : 'recuperar')">Esqueci minha senha</button>
+      <div class="rodape-login">Ao criar uma conta, você concorda com a <a href="privacidade.html">Política de privacidade</a>.</div>
 
       <!-- Aviso após cadastro / recuperação (esconde o formulário) -->
       <div class="auth-aviso">
@@ -962,6 +968,28 @@
   </div>
 </div>
 
+<!-- Modal excluir conta -->
+<div class="modal" id="modalExcluirConta" onclick="if(event.target===this)fecharModal('modalExcluirConta')">
+  <div class="modal-content">
+    <h3 style="color:var(--danger)">Excluir minha conta</h3>
+    <p class="paywall-texto" style="text-align:left;margin-bottom:8px">Isto apaga <b>definitivamente</b> e não pode ser desfeito:</p>
+    <ul class="lista-exclusao">
+      <li>sua conta e seu login;</li>
+      <li>sua lista de produtos;</li>
+      <li>todo o histórico de compras e preços;</li>
+      <li>os mercados salvos.</li>
+    </ul>
+    <p class="paywall-texto" style="text-align:left" id="avisoProExclusao"></p>
+    <div class="field">
+      <label>Digite sua senha para confirmar</label>
+      <input class="input" type="password" id="excluirSenha" autocomplete="current-password">
+    </div>
+    <div class="cfg-msg" id="excluirMsg"></div>
+    <button class="btn btn-danger" id="btnExcluirConta" onclick="confirmarExcluirConta()">Excluir conta permanentemente</button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalExcluirConta')">Cancelar</button>
+  </div>
+</div>
+
 <!-- Modal Minha conta -->
 <div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
   <div class="modal-content">
@@ -1022,7 +1050,8 @@
       Sair da conta
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <div class="perfil-rodape">Carrinhou · versão 3.11</div>
+    <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.12</div>
   </div>
 </div>
 
@@ -1480,6 +1509,44 @@
     } catch (e) {
       m.innerText = e.semSessao ? 'Link expirado. Solicite um novo.' : e.message;
       m.className = 'cfg-msg erro';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- Excluir conta ----------
+  function abrirExcluirConta() {
+    fecharModal('modalPerfil');
+    document.getElementById('excluirSenha').value = '';
+    document.getElementById('excluirMsg').innerText = '';
+    document.getElementById('avisoProExclusao').innerHTML = ehPro()
+      ? 'Você tem o plano <b>Pro</b>: cancele também a assinatura no meio de pagamento, para não ser cobrado.'
+      : '';
+    document.getElementById('modalExcluirConta').style.display = 'flex';
+  }
+
+  async function confirmarExcluirConta() {
+    let senha = document.getElementById('excluirSenha').value;
+    let m = document.getElementById('excluirMsg');
+    let erro = t => { m.innerText = t; m.className = 'cfg-msg erro'; };
+    if (!senha) return erro('Digite sua senha.');
+    if (!navigator.onLine) return erro('Sem internet. Conecte-se para excluir a conta.');
+    let btn = document.getElementById('btnExcluirConta');
+    btn.disabled = true;
+    m.innerText = 'Excluindo...'; m.className = 'cfg-msg';
+    try {
+      // Confere a senha (e renova a sessão) antes de excluir
+      try {
+        guardarSessao(await authFetch('token?grant_type=password', { email: sessao.user.email, password: senha }));
+      } catch (e) {
+        throw new Error(e.status === 400 ? 'Senha incorreta.' : e.message);
+      }
+      await rpc('excluir_minha_conta', {});
+      fecharModal('modalExcluirConta');
+      encerrarSessao(true, '');
+      authMensagem('Sua conta foi excluída. Sentiremos sua falta!', false, true);
+    } catch (e) {
+      erro(e.semSessao ? 'Sessão expirada. Entre novamente e tente de novo.' : (e.message || 'Não foi possível excluir a conta.'));
     } finally {
       btn.disabled = false;
     }
