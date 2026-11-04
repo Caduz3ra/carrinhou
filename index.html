@@ -677,7 +677,7 @@
       <div class="search-row">
         <div class="search">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="text" id="pesquisaPendente" placeholder="Pesquisar..." oninput="renderizar()">
+          <input type="text" id="pesquisaPendente" placeholder="Pesquisar..." oninput="renderizarSemAnimacao()">
           <button type="button" class="limpar-busca" onclick="limparBusca()" aria-label="Limpar busca" title="Limpar busca">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none" opacity=".35"/><path d="m15 9-6 6M9 9l6 6" stroke="var(--surface-2)" stroke-width="2.4"/></svg>
           </button>
@@ -1051,7 +1051,7 @@
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
     <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
-    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.13</div>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.14</div>
   </div>
 </div>
 
@@ -2202,6 +2202,7 @@
 
   function iniciarSwipe(e) {
     if (e.button) return;                                   // só botão principal / dedo
+    if (dicaEmAndamento) document.querySelectorAll('#listaPendentes .item-card').forEach(c => c.getAnimations().forEach(a => a.cancel()));
     let card = e.target.closest('.swipe > .item-card');
     if (!card) return;
     let el = card.parentElement;
@@ -2262,31 +2263,34 @@
 
   // Ao abrir o app: o 1º item balança para a direita e para a esquerda (mostra que dá para arrastar)
   let dicaArrastarFeita = false;
+  let dicaEmAndamento = false;
   function agendarDicaArrastar() {
     dicaArrastarFeita = true;
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    setTimeout(() => {
+    setTimeout(async () => {
       let el = document.querySelector('#listaPendentes .swipe');
       if (!el || swipe.el || swipeAberto || mostrandoHistorico) return;
       let card = el.querySelector('.item-card');
-      el.style.setProperty('--p', 1);
-      el.classList.add('mostra-esq');
-      // Mais devagar, com pequenas pausas abertas para dar tempo de ver os botões
-      const DURACAO = 3400;
-      let anim = card.animate([
-        { transform: 'translate3d(0,0,0)', offset: 0, easing: 'ease-in-out' },
-        { transform: 'translate3d(64px,0,0)', offset: 0.18 },
-        { transform: 'translate3d(64px,0,0)', offset: 0.30, easing: 'ease-in-out' },
-        { transform: 'translate3d(0,0,0)', offset: 0.46, easing: 'ease-in-out' },
-        { transform: 'translate3d(-72px,0,0)', offset: 0.64 },
-        { transform: 'translate3d(-72px,0,0)', offset: 0.78, easing: 'ease-in-out' },
-        { transform: 'translate3d(0,0,0)', offset: 1 }
-      ], { duration: DURACAO });
-      setTimeout(() => { el.classList.remove('mostra-esq'); el.classList.add('mostra-dir'); }, DURACAO * 0.46);
-      anim.onfinish = anim.oncancel = () => {
+      dicaEmAndamento = true;          // enquanto a dica roda, a lista não é redesenhada (evita "bugar" no meio)
+      const ida = (x, ms) => card.animate(
+        [{ transform: 'translate3d(0,0,0)' }, { transform: `translate3d(${x}px,0,0)`, offset: 0.45 },
+         { transform: `translate3d(${x}px,0,0)`, offset: 0.62 }, { transform: 'translate3d(0,0,0)' }],
+        { duration: ms, easing: 'ease-in-out' }).finished;
+      try {
+        el.style.setProperty('--p', 1);
+        el.classList.add('mostra-esq');            // 1º: direita (mostra a estrela)
+        await ida(64, 1700);
+        el.classList.remove('mostra-esq');
+        el.classList.add('mostra-dir');            // 2º: esquerda (mostra Renomear / Excluir)
+        await ida(-72, 1700);
+      } catch (e) {
+        // animação cancelada (ex.: a pessoa tocou na lista): só limpa
+      } finally {
         el.classList.remove('mostra-esq', 'mostra-dir');
         el.style.setProperty('--p', 0);
-      };
+        dicaEmAndamento = false;
+        if (renderAdiado) { renderAdiado = false; renderizar(); }
+      }
     }, 900);
   }
 
@@ -2300,7 +2304,7 @@
   function limparBusca() {
     let campo = document.getElementById('pesquisaPendente');
     campo.value = '';
-    renderizar();
+    renderizarSemAnimacao();
     campo.focus();
   }
 
@@ -2360,11 +2364,18 @@
     }, true);
   })();
 
+  let renderInstantaneo = false;
+  function renderizarSemAnimacao() {
+    renderInstantaneo = true;
+    renderizar();
+  }
+
   function toggleFiltroEstrela() {
     filtroEstrela = !filtroEstrela;
     lsSet(LS_FILTRO, filtroEstrela);
     document.getElementById('btnFiltroEstrela').classList.toggle('on', filtroEstrela);
-    renderizar();
+    window.scrollTo({ top: 0 });
+    renderizarSemAnimacao();
   }
 
   function toggleCarrinho() {
@@ -2592,7 +2603,9 @@
   }
 
   function renderizar() {
-    if (swipe.el && swipe.modo === 'h') { renderAdiado = true; return; }  // não redesenha no meio do arrasto
+    if ((swipe.el && swipe.modo === 'h') || dicaEmAndamento) { renderAdiado = true; return; }  // não redesenha no meio do arrasto / da dica
+    let instantaneo = renderInstantaneo;  // filtro/busca: troca a lista na hora, sem animação
+    renderInstantaneo = false;
     swipeAberto = null;
     let campoBusca = document.getElementById('pesquisaPendente');
     let filtro = (campoBusca.value || '').toLowerCase();
@@ -2657,7 +2670,8 @@
       }).join('');
     }
 
-    animarPosicoes(pendentesDiv, posPend);
+    if (instantaneo) pendentesDiv.querySelectorAll('.swipe').forEach(e => e.style.animation = 'none');
+    else animarPosicoes(pendentesDiv, posPend);
     if (carregado && pendentes.length && !dicaArrastarFeita) agendarDicaArrastar();
 
     // Carrinho
