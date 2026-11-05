@@ -752,13 +752,17 @@
     <div class="field">
       <label>Quantidade</label>
       <div class="stepper">
-          <button class="step-btn" type="button" onclick="passo('qtdProduto',-1)" aria-label="Diminuir">−</button>
+          <button class="step-btn" type="button" onmousedown="event.preventDefault()" onpointerdown="event.preventDefault()" onclick="passo('qtdProduto',-1)" aria-label="Diminuir">−</button>
           <input class="input" type="text" id="qtdProduto" value="1" inputmode="numeric" oninput="limparQtd(this)" onblur="if(!this.value)this.value=1">
-          <button class="step-btn" type="button" onclick="passo('qtdProduto',1)" aria-label="Aumentar">+</button>
+          <button class="step-btn" type="button" onmousedown="event.preventDefault()" onpointerdown="event.preventDefault()" onclick="passo('qtdProduto',1)" aria-label="Aumentar">+</button>
         </div>
     </div>
-    <button class="btn btn-primary" onclick="adicionar()">Adicionar à lista</button>
-    <button class="btn btn-ghost" onclick="fecharModal('modalNovo')">Cancelar</button>
+    <button class="btn btn-primary" onclick="adicionar(true)">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+      Adicionar ao carrinho
+    </button>
+    <button class="btn btn-ghost" onclick="adicionar(false)">Só adicionar à lista</button>
+    <button class="btn-link" onclick="fecharModal('modalNovo')">Cancelar</button>
   </div>
 </div>
 
@@ -774,9 +778,9 @@
     <div class="field">
       <label>Quantidade</label>
       <div class="stepper">
-          <button class="step-btn" type="button" onclick="passo('detalheQtd',-1)" aria-label="Diminuir">−</button>
+          <button class="step-btn" type="button" onmousedown="event.preventDefault()" onpointerdown="event.preventDefault()" onclick="passo('detalheQtd',-1)" aria-label="Diminuir">−</button>
           <input class="input" type="text" id="detalheQtd" inputmode="numeric" oninput="limparQtd(this)" onblur="if(!this.value)this.value=1">
-          <button class="step-btn" type="button" onclick="passo('detalheQtd',1)" aria-label="Aumentar">+</button>
+          <button class="step-btn" type="button" onmousedown="event.preventDefault()" onpointerdown="event.preventDefault()" onclick="passo('detalheQtd',1)" aria-label="Aumentar">+</button>
         </div>
     </div>
     <button type="button" class="link-obs" id="linkObs" onclick="abrirCampoObs()">+ Adicionar observação</button>
@@ -1051,7 +1055,7 @@
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
     <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
-    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.14</div>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.15</div>
   </div>
 </div>
 
@@ -2392,8 +2396,9 @@
   }
 
   // ---------- Ações ----------
-  function adicionar() {
-    let nome = document.getElementById('nomeProduto').value.trim();
+  // noCarrinho = true: cria o item já dentro do carrinho
+  function adicionar(noCarrinho) {
+    let nome = document.getElementById('nomeProduto').value.trim().replace(/\s+/g, ' ');
     let preco = lerPreco('precoProduto');
     let qtd = Math.max(1, parseInt(document.getElementById('qtdProduto').value) || 1);
     if (!nome) {
@@ -2401,7 +2406,21 @@
       return;
     }
     fecharModal('modalNovo');
-    executar({ t: 'add', id: novoId(), nome: nome, preco: preco, qtd: qtd });
+    if (noCarrinho) document.getElementById('pesquisaPendente').value = '';
+    // Já existe um item com esse nome (mesmo sem acento)? Usa ele em vez de criar repetido
+    let existente = (dadosGlobais.itens || []).find(i => normalizar(i.nome) === normalizar(nome));
+    if (existente) {
+      let c = { quantidade: qtd };
+      if (preco > 0) c.preco = preco;
+      if (noCarrinho) c.status = 'Carrinho';
+      executar({ t: 'upd', id: existente.id, c: c });
+      toast(noCarrinho ? `"${existente.nome}" já existia: colocado no carrinho` : `"${existente.nome}" já está na lista`, 'ok');
+      return;
+    }
+    let id = novoId();
+    executar({ t: 'add', id: id, nome: nome, preco: preco, qtd: qtd });
+    if (noCarrinho) executar({ t: 'upd', id: id, c: { status: 'Carrinho' } });
+    toast(noCarrinho ? 'Adicionado ao carrinho' : 'Adicionado à lista', 'ok');
   }
 
   function adicionarAoCarrinhoDoModal() {
@@ -2510,6 +2529,11 @@
 
   // ---------- Sugestões / Último preço ----------
   // Ao digitar um novo item, mostra os que já existem (tocar abre o item em vez de duplicar)
+  // "Pão" -> "pao": compara sem acento e sem maiúscula
+  function normalizar(t) {
+    return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
   function filtrarProdutos() {
     let termo = document.getElementById('nomeProduto').value.toLowerCase().trim();
     let div = document.getElementById('sugestoes');
@@ -2517,7 +2541,7 @@
     if (!termo) return;
 
     (dadosGlobais.itens || [])
-      .filter(i => String(i.nome).toLowerCase().includes(termo))
+      .filter(i => normalizar(i.nome).includes(normalizar(termo)))
       .sort(ordenar)
       .slice(0, 8)
       .forEach(i => {
@@ -2608,12 +2632,12 @@
     renderInstantaneo = false;
     swipeAberto = null;
     let campoBusca = document.getElementById('pesquisaPendente');
-    let filtro = (campoBusca.value || '').toLowerCase();
+    let filtro = normalizar(campoBusca.value || '');
     campoBusca.parentElement.classList.toggle('tem-texto', !!campoBusca.value);
     let itens = dadosGlobais.itens || [];
     let todosPendentes = itens.filter(i => i.status !== 'Carrinho');
     let pendentes = todosPendentes
-      .filter(i => String(i.nome).toLowerCase().includes(filtro) && (!filtroEstrela || i.estrela))
+      .filter(i => (normalizar(i.nome).includes(filtro) || (i.obs && normalizar(i.obs).includes(filtro))) && (!filtroEstrela || i.estrela))
       .sort(ordenar);
     let carrinho = itens.filter(i => i.status === 'Carrinho').sort(ordenar);
     let historico = (dadosGlobais.historico || []).slice()
