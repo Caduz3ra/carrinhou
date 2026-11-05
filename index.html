@@ -4,7 +4,17 @@
   <meta charset="utf-8">
   <title>Carrinhou</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d12">
+  <meta name="theme-color" content="#f4f6fa" id="metaTema">
+  <script>
+    // Aplica o tema salvo antes de desenhar a tela (Free = claro e cor padrão)
+    (function () {
+      var t = {};
+      try { t = JSON.parse(localStorage.getItem('carrinhou_tema') || '{}') || {}; } catch (e) {}
+      document.documentElement.dataset.tema = t.tema === 'escuro' ? 'escuro' : 'claro';
+      document.documentElement.dataset.cor = t.cor || 'turquesa';
+      try { document.getElementById('metaTema').content = t.tema === 'escuro' ? '#0b0d12' : '#f4f6fa'; } catch (e) {}
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,7 +39,14 @@
       --accent: #2dd4bf;
       --accent-2: #14b8a6;
       --accent-ink: #042a25;
-      --accent-soft: rgba(45, 212, 191, 0.12);
+      --accent-rgb: 45, 212, 191;
+      --accent-escuro: #0d9488;       /* versão mais escura da cor, para texto no tema claro */
+      --accent-texto: var(--accent);
+      --logo-2: #3b82f6;
+      --accent-soft: rgba(var(--accent-rgb), 0.12);
+      --topbar-bg: rgba(11, 13, 18, 0.88);
+      --sheet-bg: rgba(20, 24, 32, 0.92);
+      --panel-fim: rgba(20, 24, 32, 0.85);
       --danger: #f87171;
       --danger-soft: rgba(248, 113, 113, 0.12);
       --warn: #fbbf24;
@@ -41,13 +58,53 @@
       --maxw: 560px;
     }
 
+    /* ---------- Tema claro (padrão do Free) ---------- */
+    html[data-tema="claro"] {
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --surface-2: #f3f5f9;
+      --surface-3: #e8ecf2;
+      --border: #e2e7ee;
+      --border-2: #d1d8e2;
+      --text: #111827;
+      --muted: #5b6474;
+      --faint: #8d96a5;
+      --danger: #dc2626;
+      --danger-soft: rgba(220, 38, 38, 0.10);
+      --warn: #b45309;
+      --warn-soft: rgba(245, 158, 11, 0.14);
+      --success: #16a34a;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --accent-texto: var(--accent-escuro);
+      --topbar-bg: rgba(244, 246, 250, 0.90);
+      --sheet-bg: rgba(255, 255, 255, 0.95);
+      --panel-fim: #ffffff;
+      color-scheme: light;
+    }
+    html[data-tema="escuro"] { color-scheme: dark; }
+    html[data-tema="claro"] .estrela-btn.on { color: #f59e0b; opacity: 1; }
+    html[data-tema="claro"] .estrela-btn.on.perm { color: #eab308; }
+    html[data-tema="claro"] .banner-pro b,
+    html[data-tema="claro"] .tabela-planos .col-pro,
+    html[data-tema="claro"] .seg button.ativo.pro,
+    html[data-tema="claro"] .opcao-preco .valor { color: #b45309 !important; }
+    html[data-tema="claro"] .modal { background: rgba(15, 23, 42, 0.35); }
+
+    /* ---------- Cores de destaque (Pro) ---------- */
+    html[data-cor="azul"]    { --accent: #60a5fa; --accent-2: #3b82f6; --accent-rgb: 96, 165, 250;  --accent-escuro: #2563eb; --logo-2: #6366f1; }
+    html[data-cor="roxo"]    { --accent: #a78bfa; --accent-2: #8b5cf6; --accent-rgb: 167, 139, 250; --accent-escuro: #7c3aed; --logo-2: #ec4899; }
+    html[data-cor="rosa"]    { --accent: #f472b6; --accent-2: #ec4899; --accent-rgb: 244, 114, 182; --accent-escuro: #db2777; --logo-2: #a855f7; }
+    html[data-cor="coral"]   { --accent: #fb7185; --accent-2: #f43f5e; --accent-rgb: 251, 113, 133; --accent-escuro: #e11d48; --logo-2: #f97316; }
+    html[data-cor="laranja"] { --accent: #fb923c; --accent-2: #f97316; --accent-rgb: 251, 146, 60;  --accent-escuro: #ea580c; --logo-2: #f43f5e; }
+    html[data-cor="verde"]   { --accent: #4ade80; --accent-2: #22c55e; --accent-rgb: 74, 222, 128;  --accent-escuro: #16a34a; --logo-2: #14b8a6; }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     html, body { margin: 0; padding: 0; }
     body {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background:
-        radial-gradient(1200px 500px at 50% -200px, rgba(45, 212, 191, 0.10), transparent 70%),
+        radial-gradient(1200px 500px at 50% -200px, rgba(var(--accent-rgb), 0.10), transparent 70%),
         var(--bg);
       background-attachment: fixed;
       color: var(--text);
@@ -67,15 +124,15 @@
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 40;
       margin: 0 -16px 12px; padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
-      background: rgba(11, 13, 18, 0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: var(--topbar-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
     }
     .brand { display: flex; align-items: center; gap: 12px; }
     .logo {
       width: 44px; height: 44px; border-radius: 14px;
-      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      background: linear-gradient(135deg, var(--accent), var(--logo-2));
       display: grid; place-items: center; color: #04131a;
-      box-shadow: 0 6px 20px rgba(45, 212, 191, 0.30);
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.30);
     }
     .logo svg { width: 22px; height: 22px; stroke-width: 2.4; }
     .brand h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
@@ -135,7 +192,7 @@
 
     /* ---------- Painéis ---------- */
     .panel {
-      background: linear-gradient(180deg, var(--surface), rgba(20, 24, 32, 0.85));
+      background: linear-gradient(180deg, var(--surface), var(--panel-fim));
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 18px;
@@ -147,7 +204,7 @@
 
     .badge {
       font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
-      background: var(--accent-soft); color: var(--accent);
+      background: var(--accent-soft); color: var(--accent-texto);
     }
 
     /* ---------- Busca ---------- */
@@ -258,7 +315,7 @@
     .obs-input { height: 48px; }
     .btn-salvar-obs { width: 48px; height: 48px; color: var(--muted); }
     .btn-salvar-obs svg { width: 20px; height: 20px; }
-    .btn-salvar-obs.alterado { color: var(--accent); border-color: rgba(45, 212, 191, 0.45); }
+    .btn-salvar-obs.alterado { color: var(--accent-texto); border-color: rgba(var(--accent-rgb), 0.45); }
 
     /* Estrela */
     .estrela-btn {
@@ -294,7 +351,7 @@
 
     .acao-add {
       width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
-      background: var(--accent-soft); color: var(--accent); flex-shrink: 0;
+      background: var(--accent-soft); color: var(--accent-texto); flex-shrink: 0;
     }
     .acao-add svg { width: 18px; height: 18px; }
     .acao-tag-removida { font-size: 12px; font-weight: 600; color: var(--danger); background: var(--danger-soft); padding: 6px 10px; border-radius: 8px; flex-shrink: 0; }
@@ -315,7 +372,7 @@
     .cart-sheet {
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: var(--maxw); z-index: 50;
-      background: rgba(20, 24, 32, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: var(--sheet-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border); border-bottom: none;
       border-radius: 22px 22px 0 0;
       box-shadow: 0 -10px 40px rgba(0,0,0,.45);
@@ -323,7 +380,7 @@
     }
     .cart-btn {
       display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px;
-      border-radius: 12px; background: var(--accent-soft); color: var(--accent);
+      border-radius: 12px; background: var(--accent-soft); color: var(--accent-texto);
       font-size: 14px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
     }
     .cart-btn svg { width: 16px; height: 16px; transition: transform .25s ease; }
@@ -360,7 +417,7 @@
     .hist-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .hist-data { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
     .hist-data svg { width: 16px; height: 16px; color: var(--muted); }
-    .hist-total { font-weight: 800; font-size: 17px; color: var(--accent); }
+    .hist-total { font-weight: 800; font-size: 17px; color: var(--accent-texto); }
     .hist-card { cursor: pointer; transition: background .15s, border-color .15s; }
     .hist-card:hover { border-color: var(--border-2); }
     .hist-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 13px; color: var(--muted); }
@@ -425,7 +482,7 @@
     /* ---------- Login ---------- */
     .auth-screen {
       position: fixed; inset: 0; z-index: 150; display: none; overflow-y: auto;
-      background: radial-gradient(1200px 500px at 50% -200px, rgba(45, 212, 191, 0.14), transparent 70%), var(--bg);
+      background: radial-gradient(1200px 500px at 50% -200px, rgba(var(--accent-rgb), 0.14), transparent 70%), var(--bg);
       padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
     }
     .auth-screen.visivel { display: block; }
@@ -446,7 +503,7 @@
     #painelRedefinir h3 { margin: 0 0 6px; font-size: 18px; }
     #painelRedefinir .paywall-texto { margin-bottom: 16px; }
     .auth-aviso { display: none; text-align: center; padding: 6px 4px 2px; }
-    .auth-aviso .icone { width: 56px; height: 56px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+    .auth-aviso .icone { width: 56px; height: 56px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-texto); }
     .auth-aviso .icone svg { width: 26px; height: 26px; }
     .auth-aviso h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
     .auth-aviso p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
@@ -458,7 +515,7 @@
     /* ---------- Perfil ---------- */
     .avatar {
       width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--accent), #3b82f6); color: #04131a; font-weight: 800; font-size: 17px;
+      background: linear-gradient(135deg, var(--accent), var(--logo-2)); color: #04131a; font-weight: 800; font-size: 17px;
       border: none; text-transform: uppercase;
     }
     .avatar.grande { width: 56px; height: 56px; font-size: 22px; }
@@ -598,6 +655,16 @@
     .lista-exclusao { margin: 0 0 16px; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
     .rodape-login { text-align: center; margin-top: 18px; font-size: 12px; }
     .rodape-login a { color: var(--faint); }
+    /* Aparência (Pro) */
+    .aparencia { margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+    .aparencia-topo { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    .aparencia.bloqueada .seg, .aparencia.bloqueada .cores { opacity: .5; }
+    .cores { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .cor-opcao {
+      width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; padding: 0;
+      box-shadow: inset 0 0 0 3px var(--surface-2); background: var(--c);
+    }
+    .cor-opcao.sel { border-color: var(--c); }
     .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -902,6 +969,7 @@
         <tr><td>Lista, carrinho e uso offline</td><td>✓</td><td class="col-pro">✓</td></tr>
         <tr><td>Itens com estrela</td><td>3</td><td class="col-pro">Ilimitados</td></tr>
         <tr><td>Estrela permanente</td><td>—</td><td class="col-pro">✓</td></tr>
+        <tr><td>Modo escuro e cor do app</td><td>—</td><td class="col-pro">✓</td></tr>
         <tr><td>Histórico de compras</td><td>Última compra</td><td class="col-pro">Completo</td></tr>
         <tr><td>Último preço dos produtos</td><td>3 itens</td><td class="col-pro">Todos</td></tr>
       </tbody>
@@ -1019,6 +1087,14 @@
       <span class="txt"><b id="opcaoPlanoTxt">Conhecer o Pro</b><small id="opcaoPlanoSub">Estrelas ilimitadas, histórico completo e preços</small></span>
       <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
+    <div class="aparencia" id="aparencia">
+      <div class="aparencia-topo"><span>Aparência</span><span class="tag-pro" id="tagProAparencia">PRO</span></div>
+      <div class="seg">
+        <button type="button" id="temaClaro" onclick="escolherTema('claro')">Claro</button>
+        <button type="button" id="temaEscuro" onclick="escolherTema('escuro')">Escuro</button>
+      </div>
+      <div class="cores" id="coresDestaque"></div>
+    </div>
     <div class="admin-box" id="adminBox" style="display:none">
       <div class="admin-titulo">ADMIN · PLANO DA SUA CONTA (TESTES)</div>
       <div class="seg">
@@ -1055,7 +1131,7 @@
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
     <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
-    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 3.15</div>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 4.0</div>
   </div>
 </div>
 
@@ -1131,6 +1207,8 @@
       return;
     }
     if (!sessao || !sessao.user) {
+      sessao = null;
+      aplicarTema();               // sem login: tema padrão (claro)
       mostrarLogin();
       tratarRetorno(retorno);
       return;
@@ -1634,6 +1712,7 @@
     document.querySelector('#telaLogin .panel').classList.remove('mostrando-aviso');
     document.getElementById('telaLogin').classList.remove('redefinindo');
     try { localStorage.removeItem(LS_REDEFINIR); } catch (e) {}
+    aplicarTema();
     mostrarLogin(msg, !!msg);
   }
 
@@ -1652,6 +1731,8 @@
     const textos = {
       estrela: ['Limite de estrelas do plano Free',
                 `No plano Free você pode marcar até <b>${LIMITE_FREE} itens</b> com estrela.<br>Assine o <b>Pro</b> para marcar quantos quiser.`],
+      tema: ['Personalize o Carrinhou',
+                'Com o <b>Pro</b> você escolhe o <b>modo escuro</b> e a <b>cor de destaque</b> do app (botões, logo e detalhes).'],
       estrelaFixa: ['Estrela permanente é Pro',
                 'Com a <b>estrela permanente</b>, o item continua marcado depois de finalizar a compra. Ideal para o que você compra sempre.<br>Disponível no <b>Pro</b>.'],
       preco:   ['Veja o último preço de tudo',
@@ -1721,6 +1802,61 @@
     }
   }
 
+  // ---------- Aparência: tema e cor de destaque (Pro) ----------
+  const CORES = {
+    turquesa: '#2dd4bf', azul: '#60a5fa', roxo: '#a78bfa', rosa: '#f472b6',
+    coral: '#fb7185', laranja: '#fb923c', verde: '#4ade80'
+  };
+  const NOMES_COR = { turquesa: 'Turquesa', azul: 'Azul', roxo: 'Roxo', rosa: 'Rosa', coral: 'Coral', laranja: 'Laranja', verde: 'Verde' };
+
+  // Free (ou sem login): sempre claro e turquesa
+  function aplicarTema() {
+    let p = (sessao && dadosGlobais.perfil) || {};
+    let pro = sessao ? ehPro() : false;
+    let tema = pro && p.tema === 'escuro' ? 'escuro' : 'claro';
+    let cor = pro && CORES[p.cor] ? p.cor : 'turquesa';
+    document.documentElement.dataset.tema = tema;
+    document.documentElement.dataset.cor = cor;
+    document.getElementById('metaTema').content = tema === 'escuro' ? '#0b0d12' : '#f4f6fa';
+    lsSet('carrinhou_tema', { tema: tema, cor: cor });
+    // seção Aparência em Minha conta
+    document.getElementById('aparencia').classList.toggle('bloqueada', !pro);
+    document.getElementById('tagProAparencia').style.display = pro ? 'none' : 'inline';
+    document.getElementById('temaClaro').classList.toggle('ativo', tema === 'claro');
+    document.getElementById('temaEscuro').classList.toggle('ativo', tema === 'escuro');
+    document.getElementById('coresDestaque').innerHTML = Object.keys(CORES).map(k =>
+      `<button type="button" class="cor-opcao${k === cor ? ' sel' : ''}" style="--c:${CORES[k]}" title="${NOMES_COR[k]}" aria-label="${NOMES_COR[k]}" onclick="escolherCor('${k}')"></button>`).join('');
+  }
+
+  function escolherTema(tema) {
+    if (!ehPro()) { abrirPaywall('tema'); return; }
+    salvarAparencia({ tema: tema });
+  }
+  function escolherCor(cor) {
+    if (!ehPro()) { abrirPaywall('tema'); return; }
+    salvarAparencia({ cor: cor });
+  }
+
+  // Aplica na hora e salva na conta (vale para todos os aparelhos)
+  async function salvarAparencia(mudanca) {
+    dadosGlobais.perfil = Object.assign({}, dadosGlobais.perfil, mudanca);
+    salvarLocal();
+    aplicarTema();
+    if (!navigator.onLine) return;
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/perfis?id=eq.' + encodeURIComponent(sessao.user.id), {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + await tokenValido(),
+                   'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(mudanca)
+      });
+      if (!r.ok) throw new Error();
+    } catch (e) {
+      if (e && e.semSessao) return;
+      toast('Não foi possível salvar a aparência na nuvem.', 'erro');
+    }
+  }
+
   function atualizarPlanoNaTela() {
     let pro = ehPro();
     document.getElementById('opcaoPlanoTxt').innerText = pro ? 'Meu plano Pro' : 'Conhecer o Pro';
@@ -1737,6 +1873,7 @@
     document.getElementById('perfilNomeTxt').innerText = nome;
     document.getElementById('perfilEmailTxt').innerText = email;
     let pro = ehPro();
+    aplicarTema();
     document.getElementById('adminBox').style.display = p.admin ? 'block' : 'none';
     document.getElementById('admFree').classList.toggle('ativo', !pro);
     document.getElementById('admPro').classList.toggle('ativo', pro);
