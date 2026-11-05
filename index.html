@@ -89,6 +89,8 @@
     html[data-tema="claro"] .seg button.ativo.pro,
     html[data-tema="claro"] .opcao-preco .valor { color: #b45309 !important; }
     html[data-tema="claro"] .modal { background: rgba(15, 23, 42, 0.35); }
+    html[data-tema="claro"] .cart-sheet { box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.10); }
+    html[data-tema="claro"] .cart-backdrop { background: rgba(15, 23, 42, 0.25); }
 
     /* ---------- Cores de destaque (Pro) ---------- */
     html[data-cor="azul"]    { --accent: #60a5fa; --accent-2: #3b82f6; --accent-rgb: 96, 165, 250;  --accent-escuro: #2563eb; --logo-2: #6366f1; }
@@ -123,7 +125,7 @@
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 40;
-      margin: 0 -16px 12px; padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+      margin: 0 -16px 12px; padding: calc(18px + env(safe-area-inset-top)) 16px 12px;
       background: var(--topbar-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
     }
@@ -210,7 +212,7 @@
     /* ---------- Busca ---------- */
     .search-row {
       display: flex; gap: 8px; margin: 0 -18px 6px; padding: 8px 18px;
-      position: sticky; top: calc(68px + env(safe-area-inset-top)); z-index: 30;
+      position: sticky; top: calc(74px + env(safe-area-inset-top)); z-index: 30;
       background: var(--surface);
     }
     .search {
@@ -465,7 +467,7 @@
 
     /* ---------- Toast ---------- */
     .toast {
-      position: fixed; left: 50%; top: calc(78px + env(safe-area-inset-top)); /* logo abaixo da barra do topo (no iPhone, por cima dela ficava borrado) */ transform: translate(-50%, -20px);
+      position: fixed; left: 50%; top: calc(84px + env(safe-area-inset-top)); /* logo abaixo da barra do topo (no iPhone, por cima dela ficava borrado) */ transform: translate(-50%, -20px);
       background: var(--surface-3); color: var(--text); border: 1px solid var(--border-2);
       padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500;
       box-shadow: var(--shadow); opacity: 0; pointer-events: none; z-index: 200; will-change: transform, opacity;
@@ -656,15 +658,29 @@
     .rodape-login { text-align: center; margin-top: 18px; font-size: 12px; }
     .rodape-login a { color: var(--faint); }
     /* Aparência (Pro) */
-    .aparencia { margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
-    .aparencia-topo { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    .aparencia { margin-bottom: 14px; }
+    .aparencia-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .btn-paleta {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; padding: 0;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--accent-texto);
+    }
+    .btn-paleta svg { width: 20px; height: 20px; }
+    .avatar.editavel { cursor: pointer; position: relative; }
+    .avatar.com-emoji { font-size: 26px; line-height: 1; }
+    .avatar.grande.com-emoji { font-size: 32px; }
+    #btnPerfil.com-emoji { font-size: 24px; }
+    .grade-avatares { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    .grade-avatares.bloqueada { opacity: .5; }
+    .opcao-avatar {
+      aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-size: 28px; padding: 0;
+      background: var(--surface-2); border: 2px solid var(--border); color: var(--text);
+    }
+    .opcao-avatar.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .opcao-avatar.letra { font-size: 18px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--logo-2)); color: #04131a; }
     .aparencia.bloqueada .seg, .aparencia.bloqueada .cores { opacity: .5; }
     .cores { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    .cor-opcao {
-      width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; padding: 0;
-      box-shadow: inset 0 0 0 3px var(--surface-2); background: var(--c);
-    }
-    .cor-opcao.sel { border-color: var(--c); }
+    .cor-opcao { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; padding: 0; background: var(--c); }
+    .cor-opcao.sel { border-color: var(--c); box-shadow: inset 0 0 0 3px var(--surface-2); }
     .perfil-rodape { text-align: center; font-size: 11px; color: var(--faint); margin-top: 14px; }
 
     @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -796,10 +812,78 @@
   </div>
   <div class="cart-body" id="conteudoCarrinho">
     <div id="listaCarrinho"></div>
-    <button class="btn btn-success" onclick="finalizar()">
+    <button class="btn btn-primary" onclick="finalizar()">
       <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
       Finalizar compra
     </button>
+  </div>
+</div>
+
+<!-- Modal Minha conta -->
+<div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
+  <div class="modal-content">
+    <div class="perfil-topo">
+      <button type="button" class="avatar grande editavel" id="perfilAvatar" onclick="abrirAvatares()" title="Escolher avatar">?</button>
+      <div class="info">
+        <div class="perfil-nome" id="perfilNomeTxt"></div>
+        <div class="perfil-email" id="perfilEmailTxt"></div>
+      </div>
+      <span class="plano-tag" id="perfilPlano">Free</span>
+      <button type="button" class="btn-paleta" onclick="abrirAparencia()" title="Aparência (tema e cor)" aria-label="Aparência">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div class="field">
+      <label>Nome</label>
+      <div class="linha-input">
+        <input class="input" type="text" id="perfilNome" autocomplete="name" maxlength="60">
+        <button class="btn-mini btn-ghost" id="btnSalvarNome" onclick="salvarNome()">Salvar</button>
+      </div>
+    </div>
+
+    <button class="banner-pro" id="opcaoPlano" onclick="fecharModal('modalPerfil'); abrirPro()">
+      <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
+      <span class="txt"><b id="opcaoPlanoTxt">Conhecer o Pro</b><small id="opcaoPlanoSub">Estrelas ilimitadas, histórico completo e preços</small></span>
+      <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <div class="admin-box" id="adminBox" style="display:none">
+      <div class="admin-titulo">ADMIN · PLANO DA SUA CONTA (TESTES)</div>
+      <div class="seg">
+        <button type="button" id="admFree" onclick="adminPlano('free')">Free</button>
+        <button type="button" id="admPro" class="pro" onclick="adminPlano('pro')">Pro</button>
+      </div>
+    </div>
+    <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
+      Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <div class="box-senha" id="boxSenha">
+      <div class="field">
+        <label>Senha atual</label>
+        <input class="input" type="password" id="senhaAtual" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>Nova senha</label>
+        <input class="input" type="password" id="senhaNova" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="field">
+        <label>Confirmar nova senha</label>
+        <input class="input" type="password" id="senhaNova2" autocomplete="new-password">
+      </div>
+      <div class="cfg-msg" id="senhaMsg"></div>
+      <button class="btn btn-primary" id="btnTrocarSenha" onclick="trocarSenha()">Salvar nova senha</button>
+    </div>
+
+    <button class="perfil-opcao" onclick="recarregarTudo()">
+      Recarregar tudo da nuvem <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+    <button class="btn btn-danger" style="margin-top:8px" onclick="sair()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+      Sair da conta
+    </button>
+    <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
+    <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 4.1</div>
   </div>
 </div>
 
@@ -970,6 +1054,7 @@
         <tr><td>Itens com estrela</td><td>3</td><td class="col-pro">Ilimitados</td></tr>
         <tr><td>Estrela permanente</td><td>—</td><td class="col-pro">✓</td></tr>
         <tr><td>Modo escuro e cor do app</td><td>—</td><td class="col-pro">✓</td></tr>
+        <tr><td>Avatar personalizado</td><td>—</td><td class="col-pro">✓</td></tr>
         <tr><td>Histórico de compras</td><td>Última compra</td><td class="col-pro">Completo</td></tr>
         <tr><td>Último preço dos produtos</td><td>3 itens</td><td class="col-pro">Todos</td></tr>
       </tbody>
@@ -1032,7 +1117,7 @@
       <input class="input" type="text" id="finalMercado" placeholder="Ex.: Atacadão" autocomplete="off" maxlength="60" oninput="renderChipsMercado()">
     </div>
     <div class="chips-mercado" id="chipsMercado"></div>
-    <button class="btn btn-success" onclick="confirmarFinalizar()">
+    <button class="btn btn-primary" onclick="confirmarFinalizar()">
       <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
       Finalizar compra
     </button>
@@ -1062,76 +1147,27 @@
   </div>
 </div>
 
-<!-- Modal Minha conta -->
-<div class="modal" id="modalPerfil" onclick="if(event.target===this)fecharModal('modalPerfil')">
+<!-- Modal Aparência (tema e cor) -->
+<div class="modal" id="modalAparencia" onclick="if(event.target===this)fecharModal('modalAparencia')">
   <div class="modal-content">
-    <div class="perfil-topo">
-      <div class="avatar grande" id="perfilAvatar">?</div>
-      <div class="info">
-        <div class="perfil-nome" id="perfilNomeTxt"></div>
-        <div class="perfil-email" id="perfilEmailTxt"></div>
-      </div>
-      <span class="plano-tag" id="perfilPlano">Free</span>
-    </div>
-
-    <div class="field">
-      <label>Nome</label>
-      <div class="linha-input">
-        <input class="input" type="text" id="perfilNome" autocomplete="name" maxlength="60">
-        <button class="btn-mini btn-ghost" id="btnSalvarNome" onclick="salvarNome()">Salvar</button>
-      </div>
-    </div>
-
-    <button class="banner-pro" id="opcaoPlano" onclick="fecharModal('modalPerfil'); abrirPro()">
-      <span class="pro-icone"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2Z"/></svg></span>
-      <span class="txt"><b id="opcaoPlanoTxt">Conhecer o Pro</b><small id="opcaoPlanoSub">Estrelas ilimitadas, histórico completo e preços</small></span>
-      <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
-    </button>
+    <div class="aparencia-topo"><h3 style="margin:0">Aparência</h3><span class="tag-pro" id="tagProAparencia">PRO</span></div>
     <div class="aparencia" id="aparencia">
-      <div class="aparencia-topo"><span>Aparência</span><span class="tag-pro" id="tagProAparencia">PRO</span></div>
       <div class="seg">
         <button type="button" id="temaClaro" onclick="escolherTema('claro')">Claro</button>
         <button type="button" id="temaEscuro" onclick="escolherTema('escuro')">Escuro</button>
       </div>
       <div class="cores" id="coresDestaque"></div>
     </div>
-    <div class="admin-box" id="adminBox" style="display:none">
-      <div class="admin-titulo">ADMIN · PLANO DA SUA CONTA (TESTES)</div>
-      <div class="seg">
-        <button type="button" id="admFree" onclick="adminPlano('free')">Free</button>
-        <button type="button" id="admPro" class="pro" onclick="adminPlano('pro')">Pro</button>
-      </div>
-    </div>
-    <button class="perfil-opcao" id="opcaoSenha" onclick="toggleTrocaSenha()">
-      Alterar senha <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
-    </button>
-    <div class="box-senha" id="boxSenha">
-      <div class="field">
-        <label>Senha atual</label>
-        <input class="input" type="password" id="senhaAtual" autocomplete="current-password">
-      </div>
-      <div class="field">
-        <label>Nova senha</label>
-        <input class="input" type="password" id="senhaNova" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
-      </div>
-      <div class="field">
-        <label>Confirmar nova senha</label>
-        <input class="input" type="password" id="senhaNova2" autocomplete="new-password">
-      </div>
-      <div class="cfg-msg" id="senhaMsg"></div>
-      <button class="btn btn-primary" id="btnTrocarSenha" onclick="trocarSenha()">Salvar nova senha</button>
-    </div>
+    <button class="btn btn-ghost" onclick="fecharModal('modalAparencia')">Fechar</button>
+  </div>
+</div>
 
-    <button class="perfil-opcao" onclick="recarregarTudo()">
-      Recarregar tudo da nuvem <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-    </button>
-    <button class="btn btn-danger" style="margin-top:8px" onclick="sair()">
-      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
-      Sair da conta
-    </button>
-    <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
-    <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
-    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 4.0</div>
+<!-- Modal Avatar -->
+<div class="modal" id="modalAvatar" onclick="if(event.target===this)fecharModal('modalAvatar')">
+  <div class="modal-content">
+    <div class="aparencia-topo"><h3 style="margin:0">Escolha seu avatar</h3><span class="tag-pro" id="tagProAvatar">PRO</span></div>
+    <div class="grade-avatares" id="gradeAvatares"></div>
+    <button class="btn btn-ghost" onclick="fecharModal('modalAvatar')">Fechar</button>
   </div>
 </div>
 
@@ -1731,6 +1767,8 @@
     const textos = {
       estrela: ['Limite de estrelas do plano Free',
                 `No plano Free você pode marcar até <b>${LIMITE_FREE} itens</b> com estrela.<br>Assine o <b>Pro</b> para marcar quantos quiser.`],
+      avatar: ['Escolha seu avatar',
+                'Com o <b>Pro</b> você escolhe um avatar (bichinhos e personagens) para a sua conta.'],
       tema: ['Personalize o Carrinhou',
                 'Com o <b>Pro</b> você escolhe o <b>modo escuro</b> e a <b>cor de destaque</b> do app (botões, logo e detalhes).'],
       estrelaFixa: ['Estrela permanente é Pro',
@@ -1828,6 +1866,44 @@
       `<button type="button" class="cor-opcao${k === cor ? ' sel' : ''}" style="--c:${CORES[k]}" title="${NOMES_COR[k]}" aria-label="${NOMES_COR[k]}" onclick="escolherCor('${k}')"></button>`).join('');
   }
 
+  function abrirAparencia() {
+    aplicarTema();
+    document.getElementById('modalAparencia').style.display = 'flex';
+  }
+
+  // ---------- Avatar (Pro) ----------
+  const AVATARES = {
+    gato: '🐱', cachorro: '🐶', raposa: '🦊', panda: '🐼', coala: '🐨', tigre: '🐯', leao: '🦁',
+    sapo: '🐸', macaco: '🐵', coelho: '🐰', urso: '🐻', porco: '🐷', unicornio: '🦄', pinguim: '🐧',
+    oculos: '🤓', mulher: '👩', homem: '👨', menina: '👧', vovo: '👵', chef: '🧑‍🍳'
+  };
+
+  function avatarAtual() {
+    let p = dadosGlobais.perfil || {};
+    return ehPro() && AVATARES[p.avatar] ? p.avatar : null;
+  }
+
+  function abrirAvatares() {
+    let pro = ehPro();
+    let atual = avatarAtual();
+    let p = dadosGlobais.perfil || {};
+    let inicial = ((p.nome || (sessao && sessao.user.email) || '?').trim()[0] || '?').toUpperCase();
+    document.getElementById('tagProAvatar').style.display = pro ? 'none' : 'inline';
+    let grade = document.getElementById('gradeAvatares');
+    grade.classList.toggle('bloqueada', !pro);
+    grade.innerHTML =
+      `<button type="button" class="opcao-avatar letra${!atual ? ' sel' : ''}" title="Inicial do nome" onclick="escolherAvatar(null)">${esc(inicial)}</button>` +
+      Object.keys(AVATARES).map(k =>
+        `<button type="button" class="opcao-avatar${atual === k ? ' sel' : ''}" onclick="escolherAvatar('${k}')">${AVATARES[k]}</button>`).join('');
+    document.getElementById('modalAvatar').style.display = 'flex';
+  }
+
+  function escolherAvatar(chave) {
+    if (!ehPro()) { abrirPaywall('avatar'); return; }
+    fecharModal('modalAvatar');
+    salvarAparencia({ avatar: chave });
+  }
+
   function escolherTema(tema) {
     if (!ehPro()) { abrirPaywall('tema'); return; }
     salvarAparencia({ tema: tema });
@@ -1842,6 +1918,7 @@
     dadosGlobais.perfil = Object.assign({}, dadosGlobais.perfil, mudanca);
     salvarLocal();
     aplicarTema();
+    atualizarConta();
     if (!navigator.onLine) return;
     try {
       const r = await fetch(SUPABASE_URL + '/rest/v1/perfis?id=eq.' + encodeURIComponent(sessao.user.id), {
@@ -1868,8 +1945,13 @@
     let email = p.email || (sessao && sessao.user.email) || '';
     let nome = p.nome || email.split('@')[0] || '';
     let inicial = (nome.trim()[0] || '?').toUpperCase();
-    document.getElementById('btnPerfil').innerText = inicial;
-    document.getElementById('perfilAvatar').innerText = inicial;
+    // Avatar escolhido (Pro) ou a inicial do nome
+    let av = avatarAtual();
+    ['btnPerfil', 'perfilAvatar'].forEach(idEl => {
+      let el = document.getElementById(idEl);
+      el.innerText = av ? AVATARES[av] : inicial;
+      el.classList.toggle('com-emoji', !!av);
+    });
     document.getElementById('perfilNomeTxt').innerText = nome;
     document.getElementById('perfilEmailTxt').innerText = email;
     let pro = ehPro();
