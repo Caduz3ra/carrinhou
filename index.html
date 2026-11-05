@@ -364,6 +364,18 @@
     .empty svg { width: 36px; height: 36px; color: var(--faint); margin-bottom: 8px; stroke-width: 1.6; }
     .msg-erro { color: var(--danger); text-align: center; font-size: 14px; padding: 16px; }
 
+    /* ---------- Voltar ao topo ---------- */
+    .btn-topo {
+      position: fixed; z-index: 45; width: 44px; height: 44px; border-radius: 50%;
+      right: max(16px, calc((100vw - var(--maxw)) / 2 + 16px)); bottom: calc(var(--alt-carrinho, 70px) + 12px);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #fff; border: none; cursor: pointer;
+      box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35);
+      opacity: 0; transform: translateY(10px) scale(.9); pointer-events: none; transition: opacity .2s, transform .2s;
+    }
+    .btn-topo.visivel { opacity: 1; transform: none; pointer-events: auto; }
+    .cart-sheet.aberto ~ .btn-topo { opacity: 0; pointer-events: none; }
+
     /* ---------- Carrinho (bottom sheet) ---------- */
     .cart-backdrop {
       position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px);
@@ -883,7 +895,7 @@
     </button>
     <button class="btn btn-ghost" onclick="fecharModal('modalPerfil')">Fechar</button>
     <button type="button" class="link-excluir-conta" onclick="abrirExcluirConta()">Excluir minha conta</button>
-    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 4.1</div>
+    <div class="perfil-rodape"><a class="link-privacidade" href="privacidade.html">Política de privacidade</a> · Carrinhou · versão 4.2</div>
   </div>
 </div>
 
@@ -1185,6 +1197,9 @@
   </div>
 </div>
 
+<button type="button" class="btn-topo" id="btnTopo" aria-label="Voltar ao topo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -3016,6 +3031,14 @@
       }
     }
   }
+
+  // ---------- Voltar ao topo ----------
+  (function () {
+    const btn = document.getElementById('btnTopo'), sheet = document.getElementById('cartSheet');
+    const ajustar = () => document.documentElement.style.setProperty('--alt-carrinho', sheet.offsetHeight + 'px');
+    if (window.ResizeObserver) new ResizeObserver(ajustar).observe(sheet); ajustar();
+    window.addEventListener('scroll', () => btn.classList.toggle('visivel', window.scrollY > 400), { passive: true });
+  })();
 </script>
 </body>
 </html>
